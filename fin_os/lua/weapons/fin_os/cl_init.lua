@@ -22,5 +22,7 @@ language.Add( "Cleaned_fin_os", "Cleaned up all FIN OS'" )
 language.Add( "sboxlimit_fin_os", "You've reached the FIN OS limit!" )
 
 function SWEP:DrawHUD()
+
     return true
+
 end

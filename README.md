@@ -17,6 +17,12 @@
 ## BETA ( 28.03.21 )
 ### 0.0.1
 - Basic functionality
+### 0.0.2
+- Added a visual way to view the area of the wing
+- Added a visual way to see if any vectors are crossing each other
+- Added so you can have as many vector points as the alphabeth is long ( could be infinite )
+- Fixed bugs
+- Cleaned up and improved code
 
 ## @todo
 - Add flap logic

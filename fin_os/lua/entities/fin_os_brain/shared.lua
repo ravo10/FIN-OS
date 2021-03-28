@@ -12,6 +12,7 @@ ENT.Purpose			= "To make the Wing/Fin think and get physical with the air plane.
 ENT.Instructions	= "Use it with the custom FIN OS SWEP."
 
 function ENT:SetupDataTables()
+
     self:NetworkVar("Vector", 0, "VelocityPointA")
     self:NetworkVar("Vector", 1, "VelocityPointB")
 
@@ -24,15 +25,17 @@ function ENT:SetupDataTables()
     
     -- First time setup
     if SERVER then
-        -- VECTOR
+
         self:SetVelocityPointA(Vector(0, 0, 0))
         self:SetVelocityPointB(Vector(0, 0, 0))
-        -- INT
+
         self:SetVelocityTimeA("0")
         self:SetVelocityTimeB("0")
-        -- BOOLEAN
+
         self:SetPointAAndTimeAAvailable(false)
         self:SetPointBAndTimeBAvailable(false)
         self:SetAllPointsAndTimesAvailable(false)
+
     end
+
 end
