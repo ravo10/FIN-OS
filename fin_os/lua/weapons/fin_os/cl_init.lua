@@ -1,0 +1,26 @@
+AddCSLuaFile( "shared.lua" )
+include( "shared.lua" )
+AddCSLuaFile( "hooks/cl_hooks.lua" )
+include( "hooks/cl_hooks.lua" )
+
+include( "cl_viewscreen.lua" )
+
+-- ///////////////////////////////////////////////////////////////////////////////
+-- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
+-- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
+-- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
+-- ///////////////////////////////////////////////////////////////////////////////
+SWEP.WepSelectIcon = surface.GetTextureID( "vgui/fin_os/fin_os_tool" )
+SWEP.ToolNameHeight = 0
+SWEP.Gradient = surface.GetTextureID( "gui/gradient" )
+SWEP.InfoIcon = surface.GetTextureID( "gui/info" )
+SWEP.LastMessage = 0
+
+language.Add( "Undone_fin_os", "Undone a FIN OS" )
+language.Add( "Cleanup_fin_os", "Fin OS" )
+language.Add( "Cleaned_fin_os", "Cleaned up all FIN OS'" )
+language.Add( "sboxlimit_fin_os", "You've reached the FIN OS limit!" )
+
+function SWEP:DrawHUD()
+    return true
+end
