@@ -72,7 +72,7 @@ local function WriteFinOSTableData( ent, entTableID, _table ) -- This is getting
     -- Maybe reset the table
     if not _table then
 
-        ent[ "FinOS_data" ][ entTableID ] = nil
+        if ent[ "FinOS_data" ] then ent[ "FinOS_data" ][ entTableID ] = nil end
 
         return
 
@@ -103,15 +103,16 @@ if CLIENT then
 
 end
 
-function FINOS_AddDataToEntFinTable( ent, entTableID, _table )
+function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player )
 
     if SERVER then
 
-        if not ent:IsValid() then return print( "FINOS_AddDataToEntFinTable: 'ent' is not valid. ID: 'entTableID'" ) end
+        if not ent or not ent:IsValid() then return print( "FINOS_AddDataToEntFinTable: 'ent' is not valid. ID: "..entTableID.."." ) end
 
         WriteFinOSTableData( ent, entTableID, _table )
 
         net.Start("FINOS_UpdateEntityTableValue_CLIENT")
+
             net.WriteTable({
 
                 ent = ent,
@@ -119,13 +120,15 @@ function FINOS_AddDataToEntFinTable( ent, entTableID, _table )
                 _table = _table
 
             })
-        net.Broadcast()
+
+        if Player and Player:IsValid() then net.Send( Player ) else net.Broadcast() end
 
     end
 
 end
 function FINOS_GetDataToEntFinTable( ent, entTableID )
-    if not ent:IsValid() then return print( "FINOS_GetDataToEntFinTable: 'ent' is not valid. ID: 'entTableID'" ) end
+
+    if not ent or not ent:IsValid() then return print( "FINOS_GetDataToEntFinTable: 'ent' is not valid. ID: "..entTableID.."." ) end
 
     if ent[ "FinOS_data" ] and ent[ "FinOS_data" ][ entTableID ] then
 

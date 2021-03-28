@@ -96,30 +96,59 @@ function ENT:ApplyForceLiftToFinWing( entParent )
 			local CURRENT_ATTACK_ANGLE = ( CURRENT_ANGLE_OF_ATTACK_PITCH * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS )
 			CURRENT_MAIN_FIN_ANGLES_OF_ATTACK = ( CURRENT_MAIN_FIN_ANGLES_OF_ATTACK * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS )
 			
-			local SCALAR = 10 -- Adds a little more juice
+			local SCALAR = entParent[ "FinOS_LiftForceScalarValue" ] -- Adds a little more juice
 			local CURRENT_LIFT_FORCE_FIN_IN_NEWTONS_MODIFIED = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS * SCALAR * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS + CURRENT_MAIN_FIN_ANGLES_OF_ATTACK[ 3 ]
 
 			-- ** THE MAGIC ** --
 			entPhysicsObject:ApplyForceCenter( Vector(
+
 				CURRENT_MAIN_FIN_ANGLES_OF_ATTACK[ 1 ],
 				CURRENT_MAIN_FIN_ANGLES_OF_ATTACK[ 2 ],
 				CURRENT_LIFT_FORCE_FIN_IN_NEWTONS_MODIFIED
+
 			) )
 
 			-- Store some data ( can be viewed by player )
 			FINOS_AddDataToEntFinTable( entParent, "fin_os__EntAngleProperties", {
+
 				Main_Fin_BaseAngle = ANGLEPROPERTIESTABLE[ "Main_Fin_BaseAngle" ],
 				Main_Fin_AttackAngle_Pitch = CURRENT_ATTACK_ANGLE,
 				Main_Fin_AttackAngle_RollCosinus = CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS,
-				Flap_Fin_BaseAngle = ANGLEPROPERTIESTABLE[ "Flap_Fin_BaseAngle" ],
+				Flap_Fin_BaseAngle = ANGLEPROPERTIESTABLE[ "Flap_Fin_BaseAngle" ]
+
 			} )
 			
 			FINOS_AddDataToEntFinTable( entParent, "fin_os__EntPhysicsProperties", {
+
 				VelocityKmH = CURRENT_VELOCITY_KmHour,
 				LiftForceNewtonsModified_beingUsed = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS_MODIFIED,
 				LiftForceNewtonsNotModified = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS,
 				AreaMeterSquared = CURRENT_AREA_METER
+
 			} )
+
+			-- Updated tracked fins for players, if any player has this fin as the tracked one
+			for _, OWNER in pairs( player.GetAll() ) do
+
+				local finBeingTrackedByPlayer = OWNER:GetNWEntity( "fin_os_tracked_fin" )
+
+				if finBeingTrackedByPlayer:IsValid() and finBeingTrackedByPlayer == entParent then
+
+					-- Store, so it can be viewed on client side
+					FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", {
+
+						FinBeingTracked = finBeingTrackedByPlayer,
+						Main_Fin_AttackAngle_Pitch = CURRENT_ATTACK_ANGLE,
+						VelocityKmH = CURRENT_VELOCITY_KmHour,
+						LiftForceNewtonsModified_beingUsed = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS_MODIFIED,
+						LiftForceNewtonsNotModified = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS,
+						AreaMeterSquared = CURRENT_AREA_METER
+		
+					}, OWNER )
+
+				end
+
+			end
 
 		end
 

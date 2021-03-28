@@ -23,6 +23,7 @@ AddCSLuaFile( "reload.lua" )
 -- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
 -- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
 -- ///////////////////////////////////////////////////////////////////////////////
+FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE = 10
 
 SWEP.Weight = 5
 SWEP.AutoSwitchTo = false
@@ -38,6 +39,7 @@ hook.Add( "Initialize", "fin_os:Initialize", function()
 
     -- Add Network Strings
     util.AddNetworkString("FINOS_UpdateEntityTableValue_CLIENT")
+    util.AddNetworkString("FINOS_UpdateEntityScalarLiftForceValue_CLIENT")
 
 end )
 
@@ -58,12 +60,32 @@ if SERVER then
         FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAngleProperties", Data[ "ANGLEPROPERTIESTABLE" ] )
         FINOS_AddDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", Data[ "PHYSICSPROPERTIESSTABLE" ] )
 
+        local DUPLICATEDENTITY = Data[ "DUPLICATEDENTITY" ]
+
+        if DUPLICATEDENTITY and DUPLICATEDENTITY:IsValid() then
+
+            Entity[ "FinOS_LiftForceScalarValue" ] = DUPLICATEDENTITY[ "FinOS_LiftForceScalarValue" ]
+
+            -- Send to client
+            net.Start( "FINOS_UpdateEntityScalarLiftForceValue_CLIENT" )
+
+                net.WriteTable({
+
+                    ent = Entity,
+                    FinOS_LiftForceScalarValue = DUPLICATEDENTITY[ "FinOS_LiftForceScalarValue" ]
+
+                })
+            
+            net.Broadcast()
+
+        end
+
         -- Add the brain
-        FINOS_AddFinWingEntity( Entity, Player )
+        FINOS_AddFinWingEntity( Entity, Player, true )
     
     end )
 
-    function FINOS_UpdateDuplicatorDataForEntity( Entity )
+    function FINOS_UpdateDuplicatorDataForEntity( Entity ) -- The new entity will have this data
 
         local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints" )
         --[[ IDs:
@@ -90,19 +112,20 @@ if SERVER then
             LiftForceNewtonsNotModified
             AreaMeterSquared
          ]]
-    
+
         -- Create a new table to store in duplicator settings for the entity
         local Data = {
 
+            DUPLICATEDENTITY = Entity,
             AREAPOINTSTABLE = AREAPOINTSTABLE,
             AREAVECTORSTABLE = AREAVECTORSTABLE,
             ANGLEPROPERTIESTABLE = ANGLEPROPERTIESTABLE,
             PHYSICSPROPERTIESSTABLE = PHYSICSPROPERTIESSTABLE
 
         }
-    
+
         duplicator.StoreEntityModifier( Entity, "FinOS", Data )
-    
+
     end
 
 end
@@ -221,8 +244,6 @@ function SWEP:CalculateAreaForFinBasedOnAreaPoints( ent, owner )
         self:AlertPlayer( "Current area between vectors: "..self:GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ].." m²" )
         self:AlertPlayer( "Current base angle (P, Y, R) set to: ("..math.Round( currentEntAngle[ 1 ] )..", "..math.Round( currentEntAngle[ 2 ] )..", "..math.Round( currentEntAngle[ 3 ] )..")" )
 
-        if owner:GetNWBool("fin_os_show_settings", nil) == nil then owner:SetNWBool("fin_os_show_settings", true) end
-
     end
 
 end
@@ -298,7 +319,7 @@ function FINOS_VectorCrossProduct( vectorA, vectorB, round )
 end
 
 -- Fin's Wings Brain ( final step )
-function FINOS_AddFinWingEntity( ent, owner )
+function FINOS_AddFinWingEntity( ent, owner, duplication )
 
     -- Remove any (if) current fin wing from entity
     local prevFinOSBrain = ent:GetNWEntity( "fin_os_brain" )
@@ -312,8 +333,25 @@ function FINOS_AddFinWingEntity( ent, owner )
 
     entFin:SetName( "fin_os_finWingBrain" )
     entFin:SetParent( ent )
-    entFin:SetOwner( pl )
-    entFin:SetCreator( pl )
+    entFin:SetOwner( owner )
+    entFin:SetCreator( owner )
+
+    if not duplication then
+
+        ent[ "FinOS_LiftForceScalarValue" ] = FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE
+
+        net.Start( "FINOS_UpdateEntityScalarLiftForceValue_CLIENT" )
+            
+            net.WriteTable({
+
+                ent = ent,
+                FinOS_LiftForceScalarValue = FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE
+
+            })
+        
+        net.Broadcast()
+
+    end
 
     -- Spawn
     entFin:Spawn()
@@ -321,12 +359,12 @@ function FINOS_AddFinWingEntity( ent, owner )
 
     ent:SetNWEntity( "fin_os_brain", entFin )
 
-    ent:SetNWBool( "fin_os_active", true )
-
     FINOS_UpdateDuplicatorDataForEntity( ent )
 
     owner:AddCount( "fin_os", ent )
-	owner:AddCleanup( "fin_os", ent )
+    owner:AddCleanup( "fin_os", ent )
+
+    ent:SetNWBool( "fin_os_active", true )
 
 end
 
@@ -335,6 +373,50 @@ end
 -- ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION
 -- ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION
 -- ///////////////////////////////////////////////////////////////////////////////
+
+hook.Add( "SetupMove", "mbd:SetupMove001", function( pl, mv, cmd )
+
+    if mv:KeyDown( IN_USE ) then
+
+        local mouseWheelScrollDelta = cmd:GetMouseWheel()
+
+        -- Change the slowdown effect up or down
+        if mouseWheelScrollDelta ~= 0 then
+
+            local ENT = pl:GetEyeTrace().Entity
+
+            if ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_active" ) and pl:GetActiveWeapon():GetClass() == "fin_os" then
+
+                local scalarValue = ENT[ "FinOS_LiftForceScalarValue" ]
+                if not scalarValue then ENT[ "FinOS_LiftForceScalarValue" ] = FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE end
+
+                local newScalarValue = scalarValue
+
+                if mouseWheelScrollDelta > 0 then newScalarValue = newScalarValue + 1 else newScalarValue = newScalarValue - 1 end
+                if newScalarValue < 1 then newScalarValue = 1 elseif newScalarValue > 396 then newScalarValue = 396 end
+
+                -- Store new scalar value
+                ENT[ "FinOS_LiftForceScalarValue" ] = newScalarValue
+
+                -- Send to client
+                net.Start( "FINOS_UpdateEntityScalarLiftForceValue_CLIENT" )
+
+                    net.WriteTable({
+
+                        ent = ENT,
+                        FinOS_LiftForceScalarValue = newScalarValue
+
+                    })
+                
+                net.Broadcast()
+
+            end
+
+        end
+
+    end
+
+end )
 
 include( "primary_attack.lua" )
 include( "secondary_attack.lua" )

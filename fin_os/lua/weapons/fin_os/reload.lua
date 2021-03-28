@@ -8,6 +8,7 @@ function SWEP:Reload()
     -- Prevent to fast reload
     if CurTime() - lastReloadTime < 0.7 then return false end lastReloadTime = CurTime()
 
+    local OWNER = self.Owner
     local WEAPON = self.Weapon
     local ENT = tr.Entity
 
@@ -19,12 +20,14 @@ function SWEP:Reload()
     if prevFinOSBrain and prevFinOSBrain:IsValid() then foundOneFinWing = true prevFinOSBrain:Remove() end
     
     if not foundOneFinWing and ENT[ "FinOS_data" ][ "fin_os__EntAreaPoints" ] then
+
         -- Reset area points
         FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPoints", nil )
         self:AlertPlayer( "**Removed one or two area points from fin" )
 
         -- Play sound
         WEAPON:EmitSound( "garrysmod/save_load1.wav", 30, 200 )
+
     end
 
     if not foundOneFinWing then return false end
@@ -37,6 +40,15 @@ function SWEP:Reload()
     FINOS_AddDataToEntFinTable( ENT, "fin_os__EntPhysicsProperties", nil )
 
     ENT:SetNWBool( "fin_os_active", false )
+
+    -- If the Player has this fin as the tracked one
+    if OWNER:GetNWEntity( "fin_os_tracked_fin" ):IsValid() and OWNER:GetNWEntity( "fin_os_tracked_fin" ) == ENT then
+
+        OWNER:SetNWEntity( "fin_os_tracked_fin", nil )
+
+        FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", nil, OWNER )
+
+    end
 
     -- Remove saved duplicator settings for entity
     duplicator.ClearEntityModifier( ENT, "FinOS" )

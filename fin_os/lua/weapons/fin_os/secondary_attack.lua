@@ -1,25 +1,38 @@
 function SWEP:SecondaryAttack()
+
     local tr = self:GetTrace()
     if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() ) then return false end
 
     local OWNER = self.Owner
     local ENT = tr.Entity
 
-    if OWNER:GetNWBool( "fin_os_active" ) and OWNER:KeyDown( IN_USE ) then
+    if ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_active" ) then
 
-        -- Turn Show settings on/off
-        if OWNER:GetNWBool( "fin_os_show_settings" ) then OWNER:SetNWBool( "fin_os_show_settings", false ) else
+        -- Maybe add the current viewed entity fin wing to the panel, or hide panel
+        local currentTrackedWingEntity = OWNER:GetNWEntity( "fin_os_tracked_fin" )
+        local nextFinWingEntity = ENT
 
-            OWNER:SetNWBool( "fin_os_show_settings", true )
+        if currentTrackedWingEntity:IsValid() and nextFinWingEntity:IsValid() and currentTrackedWingEntity == nextFinWingEntity then
+
+            -- Reset
+            OWNER:SetNWEntity( "fin_os_tracked_fin", nil )
+            
+            FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", nil, OWNER )
+
+        else
+
+            OWNER:SetNWEntity( "fin_os_tracked_fin", nextFinWingEntity )
+
+            FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", nil, OWNER )
 
         end
 
-    else
-
         self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
+
+        return true
 
     end
 
-    return true
+    return false
 
 end

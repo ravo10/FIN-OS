@@ -7,14 +7,20 @@ function SWEP:PrimaryAttack()
 
     if OWNER:KeyDown( IN_USE ) then return false end
 
-    -- Set vector points on wing for area calculations
-    self:SetAreaPointsForFin( tr )
-    self:CalculateAreaForFinBasedOnAreaPoints( ENT, OWNER )
+    if ENT and ENT:IsValid() then
 
-    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints" )
-    if #AREAPOINTSTABLE > 2 then FINOS_AddFinWingEntity( ENT, OWNER ) end
+        -- Set vector points on wing for area calculations
+        self:SetAreaPointsForFin( tr )
+        self:CalculateAreaForFinBasedOnAreaPoints( ENT, OWNER )
 
-    -- Effect
-    self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
-    return true
+        local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints" )
+        if #AREAPOINTSTABLE > 2 then FINOS_AddFinWingEntity( ENT, OWNER ) end
+
+        -- Effect
+        self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
+        return true
+
+    end
+
+    return false
 end

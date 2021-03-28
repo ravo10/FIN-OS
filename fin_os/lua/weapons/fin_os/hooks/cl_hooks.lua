@@ -1,3 +1,9 @@
+local WingCorrectWayUp = function( rollCosinusFraction, pitchAttackAngle )
+    
+    if ( rollCosinusFraction ~= 0 or math.abs( pitchAttackAngle ) ~= 0 ) and math.abs( pitchAttackAngle ) < 90 then return "Yes" else return "No" end
+
+end
+
 hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
     local Player = LocalPlayer()
@@ -9,7 +15,6 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
         local ENT = tr.Entity
 
         -- If player looks at a fin, maybe show the current settings/values
-        -- and LocalPlayer():GetNWBool( "fin_os_show_settings" )
         if ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_active" ) then
 
             local MainFinSettingsTable = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAngleProperties" )
@@ -28,12 +33,10 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 local force_lift = math.Round( MainFinPhysicsPropertiesTable[ "LiftForceNewtonsNotModified" ] )
                 local area_meter_squared = math.Round( MainFinPhysicsPropertiesTable[ "AreaMeterSquared" ], 2 )
 
-                local wingCorrectWayUp = function() if ( rollCosinusFraction ~= 0 or math.abs( pitchAttackAngle ) ~= 0 ) and math.abs( pitchAttackAngle ) < 90 then return "Yes" else return "No" end end
-
                 local backgroundPosX = ( ScrW() - 300 - 20 )
                 local backgroundPosY = 250
 
-                
+                local textColor = Color( 255, 255, 255, 255 )
 
                 draw.RoundedBox( 8,
                     backgroundPosX,
@@ -47,7 +50,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "Trebuchet24",
                     ( backgroundPosX + 60 ),
                     ( backgroundPosY - 45 ),
-                    Color( 255, 255, 255, 255 ),
+                    textColor,
                     TEXT_ALIGN_LEFT
                 )
                 draw.DrawText(
@@ -55,7 +58,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "HudSelectionText",
                     ( backgroundPosX + 150 ),
                     ( backgroundPosY - 45 ),
-                    Color( 255, 255, 255, 255 ),
+                    textColor,
                     TEXT_ALIGN_LEFT
                 )
 
@@ -72,7 +75,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 ),
-                    Color( 255, 255, 255, 255 ),
+                    textColor,
                     TEXT_ALIGN_LEFT
                 )
                 draw.DrawText(
@@ -80,7 +83,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 2 ),
-                    Color( 255, 255, 255, 255 ),
+                    textColor,
                     TEXT_ALIGN_LEFT
                 )
 
@@ -89,7 +92,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 ),
-                    Color( 255, 255, 255, 255 ),
+                    textColor,
                     TEXT_ALIGN_LEFT
                 )
                 draw.DrawText(
@@ -97,7 +100,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 ),
-                    Color( 255, 255, 255, 255 ),
+                    textColor,
                     TEXT_ALIGN_LEFT
                 )
                 draw.DrawText(
@@ -105,20 +108,92 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 3 ),
-                    Color( 255, 255, 255, 255 ),
+                    textColor,
                     TEXT_ALIGN_LEFT
                 )
                 
                 draw.DrawText(
-                    "Wing correct way up?: "..wingCorrectWayUp(),
+                    "Wing correct way up?: "..WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 ),
-                    Color( 255, 255, 255, 255 ),
+                    textColor,
+                    TEXT_ALIGN_LEFT
+                )
+                
+                draw.DrawText(
+                    "Scalar ( Force[LIFT] ): "..ENT[ "FinOS_LiftForceScalarValue" ],
+                    "HudSelectionText",
+                    ( backgroundPosX + 20 ),
+                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 * 2 ),
+                    textColor,
                     TEXT_ALIGN_LEFT
                 )
 
             end
+
+        end
+
+        -- Display tracked fin entity
+        local PHYSICSPROPERTIESSTABLE = FINOS_GetDataToEntFinTable( Player, "fin_os__EntBeingTracked" )
+
+        if PHYSICSPROPERTIESSTABLE and PHYSICSPROPERTIESSTABLE["FinBeingTracked"] and PHYSICSPROPERTIESSTABLE["FinBeingTracked"]:IsValid() then
+
+            local width = 150
+
+            local backgroundPosX = ( ScrW() - width - 20 )
+            local backgroundPosY = 250 + 210
+
+            local pitchAttackAngle = math.Round( PHYSICSPROPERTIESSTABLE[ "Main_Fin_AttackAngle_Pitch" ] )
+            local rollCosinusFraction = PHYSICSPROPERTIESSTABLE[ "Main_Fin_AttackAngle_RollCosinus" ]
+
+            local speed = math.Round( PHYSICSPROPERTIESSTABLE[ "VelocityKmH" ] )
+            local force_lift = math.Round( PHYSICSPROPERTIESSTABLE[ "LiftForceNewtonsNotModified" ] )
+            local area_meter_squared = math.Round( PHYSICSPROPERTIESSTABLE[ "AreaMeterSquared" ], 2 )
+
+            draw.RoundedBox( 8,
+                backgroundPosX,
+                backgroundPosY,
+                width,
+                77,
+                Color( 255, 255, 0, 143 ) -- yellow
+            )
+
+            local textColor = Color( 0, 0, 0, 200 )
+
+            draw.DrawText(
+                "AAA: "..pitchAttackAngle.."˚",
+                "DermaDefaultBold",
+                ( backgroundPosX + 10 ),
+                ( backgroundPosY + 8 ),
+                textColor,
+                TEXT_ALIGN_LEFT
+            )
+            draw.DrawText(
+                "U up ?: "..WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
+                "DermaDefaultBold",
+                ( backgroundPosX + 10 ),
+                ( backgroundPosY + 8 + 12 ),
+                textColor,
+                TEXT_ALIGN_LEFT
+            )
+
+            draw.DrawText(
+                "Speed: "..speed.." km/h",
+                "DermaDefaultBold",
+                ( backgroundPosX + 10 ),
+                ( backgroundPosY + 8 * 3 + 12 + 4 ),
+                textColor,
+                TEXT_ALIGN_LEFT
+            )
+            draw.DrawText(
+                "Force[LIFT]: "..force_lift.." N",
+                "DermaDefaultBold",
+                ( backgroundPosX + 10 ),
+                ( backgroundPosY + 8 * 3 + 12 * 2 + 4 ),
+                textColor,
+                TEXT_ALIGN_LEFT
+            )
 
         end
 
@@ -136,7 +211,7 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
         local ENT = tr.Entity
 
-        if Player:GetActiveWeapon():GetClass() == "fin_os" and ENT and ENT:IsValid() then
+        if Player and Player:IsValid() and Player:GetActiveWeapon():GetClass() == "fin_os" and ENT and ENT:IsValid() then
 
             local MainFinAreaPointsTable = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints" )
 
@@ -163,7 +238,7 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
             end
 
-            -- Draw lines between points, so the player can see that no vector points are crossing each other
+            -- Draw lines between points, so the player can see that no vector points are crossing eachother
             for k, v in pairs( MainFinAreaPointsTable ) do
 
                 local point1 = v
@@ -193,3 +268,10 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
     return false
 
 end )
+
+hook.Add("HUDShouldDraw", "fin_os:HUDShouldDraw", function( name )
+
+	-- When Player is in slow motion
+	if LocalPlayer() and LocalPlayer():GetNWBool( "PlayerIsLookingAtFinAndChangingScalarValue" ) and name == "CHudWeaponSelection" then return false end
+
+end)
