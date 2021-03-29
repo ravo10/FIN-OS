@@ -38,10 +38,7 @@ function ENT:RestAllPointsAndTimesForVelocityCalculation()
 
 end
 
--- Constants
-local RHO_MASS_DENSITY_AIR = 1.29 -- At 0 degrees celcius
-
--- Apply Force[LIFT] to fin/wing
+-- Apply Force[LIFT] to fin/wing/flap
 function ENT:ApplyForceLiftToFinWing( entParent )
 
 	-- Calculate force for lift
@@ -50,8 +47,8 @@ function ENT:ApplyForceLiftToFinWing( entParent )
 	-- Check if we got all the values needed => Velocity = Delta Distance / Delta Time
 	if self:GetAllPointsAndTimesAvailable() then
 
-		local AREAVectors = FINOS_GetDataToEntFinTable( entParent, "fin_os__EntAreaVectors" )
-		local DRAGVectors = FINOS_GetDataToEntFinTable( entParent, "fin_os__EntDragVectors" )
+		local AREAVectors = FINOS_GetDataToEntFinTable( entParent, "fin_os__EntAreaVectors", "ID0" )
+		local DRAGVectors = FINOS_GetDataToEntFinTable( entParent, "fin_os__EntDragVectors", "ID1" )
 		
 		-- Variables
 		local CURRENT_AREA_METER = AREAVectors[ "vCPLFin_Area_Meter" ]
@@ -67,65 +64,136 @@ function ENT:ApplyForceLiftToFinWing( entParent )
 		local CURRENT_VELOCITY_MeterSecond = ( ( CURRENT_VELOCITY_UnitsSecond / 12 * 0.3048 ) ) -- The actual velocity in m/s
 		local CURRENT_VELOCITY_KmHour = ( CURRENT_VELOCITY_MeterSecond * 3.6 ) -- The actual velocity in km/h
 
-		-- Apply force to fin
-		-- Uses formula:
-		-- F_lift[N] = .5 * rho_air[kg/m^3] * Velocity[m/s]^2 * Area[m^2] * C_lift[Angle of attack on air (WING AND FLAP combined)]
-		-- This formula is used in real world applications aswell
-		local CURRENT_LIFT_FORCE_FIN_IN_NEWTONS = ( 0.5 * RHO_MASS_DENSITY_AIR * math.pow( CURRENT_VELOCITY_MeterSecond, 2 ) * CURRENT_AREA_METER )
-
 		local entPhysicsObject = entParent:GetPhysicsObject()
 
 		if entPhysicsObject:IsValid() then
 
-			local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( entParent, "fin_os__EntAngleProperties" )
-			
-			local ENT_MAIN_BASE_ANGLES = ANGLEPROPERTIESTABLE[ "Main_Fin_BaseAngle" ]
-			local CURRENT_ENT_ANGLES = entParent:GetAngles()
+			local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( entParent, "fin_os__EntAngleProperties", "ID2" )
+			local SCALAR = entParent[ "FinOS_LiftForceScalarValue" ] -- Adds a little more juice
 
-			local CURRENT_MAIN_FIN_ANGLES_OF_ATTACK = Angle(
-				( CURRENT_ENT_ANGLES[ 1 ] - ENT_MAIN_BASE_ANGLES[ 1 ] ),
-				( CURRENT_ENT_ANGLES[ 2 ] - ENT_MAIN_BASE_ANGLES[ 2 ] ),
-				( CURRENT_ENT_ANGLES[ 3 ] - ENT_MAIN_BASE_ANGLES[ 3 ] )
+			-- ///////////////////////////////////////////////////////////////////////////////
+			-- FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN
+			-- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
+			-- ///////////////////////////////////////////////////////////////////////////////
+
+			local ATTACKANGLESFINTABLE = FINOS_CalculateAttackAnglesDegreesFor_CL( entParent )
+
+			-- Calculate Lift Force [ FIN ]
+			local CALULATETFORCESFINTABLE = FINOS_CalculateLiftForce(
+
+				entParent,
+				ATTACKANGLESFINTABLE,
+				GetConVar( "finos_rhodensistyfluidvalue" ):GetInt(),
+				CURRENT_VELOCITY_MeterSecond,
+				CURRENT_AREA_METER,
+				SCALAR
+
 			)
 
-			local CURRENT_ANGLE_OF_ATTACK_PITCH = CURRENT_MAIN_FIN_ANGLES_OF_ATTACK[ 1 ]
-			local CURRENT_ANGLE_OF_ATTACK_ROLL = CURRENT_MAIN_FIN_ANGLES_OF_ATTACK[ 3 ]
-			local CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = math.Round( math.cos( math.rad(CURRENT_ANGLE_OF_ATTACK_ROLL) ) )
+			local CURRENT_LIFT_FORCE_IN_NEWTONS__FIN = CALULATETFORCESFINTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS" ]
+			local CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FIN = CALULATETFORCESFINTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED" ]
 
-			-- Being used
-			local CURRENT_ATTACK_ANGLE = ( CURRENT_ANGLE_OF_ATTACK_PITCH * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS )
-			CURRENT_MAIN_FIN_ANGLES_OF_ATTACK = ( CURRENT_MAIN_FIN_ANGLES_OF_ATTACK * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS )
-			
-			local SCALAR = entParent[ "FinOS_LiftForceScalarValue" ] -- Adds a little more juice
-			local CURRENT_LIFT_FORCE_FIN_IN_NEWTONS_MODIFIED = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS * SCALAR * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS + CURRENT_MAIN_FIN_ANGLES_OF_ATTACK[ 3 ]
+			-- ///////////////////////////////////////////////////////////////////////////////
+			-- FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP
+			-- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
+			-- ///////////////////////////////////////////////////////////////////////////////
+
+			local ATTACKANGLESFROMFLAPTABLE
+			local CURRENT_CL_PERCEPTION_START_ANGLE_DEGREES_FLAP
+
+			local CALULATETFORCESFLAPTABLE
+
+			local CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP = 0
+			local CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP = 0
+
+			local ENT_FLAP = entParent:GetNWEntity( "fin_os_flapEntity" ) if ENT_FLAP:IsValid() then
+
+				ATTACKANGLESFROMFLAPTABLE = FINOS_CalculateAttackAnglesDegreesFor_CL( ENT_FLAP )
+
+				if ATTACKANGLESFROMFLAPTABLE then
+
+					-- Calculate Lift Force [ FLAP ]
+					CALULATETFORCESFLAPTABLE = FINOS_CalculateLiftForce(
+
+						ENT_FLAP,
+						ATTACKANGLESFROMFLAPTABLE,
+						GetConVar( "finos_rhodensistyfluidvalue" ):GetInt(),
+						CURRENT_VELOCITY_MeterSecond,
+						( CURRENT_AREA_METER / 4 ),
+						SCALAR
+					
+					)
+
+					CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP = CALULATETFORCESFLAPTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS" ]
+					CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP = CALULATETFORCESFLAPTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED" ]
+
+				end
+
+			end
+
+			-- ///////////////////////////////////////////////////////////////////////////////
+			-- FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN FIN
+			-- FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP FLAP
+			-- APPLY APPLY APPLY APPLY APPLY APPLY APPLY APPLY APPLY APPLY APPLY APPLY APPLY
+			-- ///////////////////////////////////////////////////////////////////////////////
+
+			local FLAPANGLEVECTOR1 = 0
+			local FLAPANGLEVECTOR2 = 0
+
+			if ENT_FLAP:IsValid() and ATTACKANGLESFROMFLAPTABLE then
+
+				FLAPANGLEVECTOR1 = ATTACKANGLESFROMFLAPTABLE[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ][ 1 ]
+				FLAPANGLEVECTOR2 = ATTACKANGLESFROMFLAPTABLE[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ][ 2 ]
+
+			end
 
 			-- ** THE MAGIC ** --
 			entPhysicsObject:ApplyForceCenter( Vector(
 
-				CURRENT_MAIN_FIN_ANGLES_OF_ATTACK[ 1 ],
-				CURRENT_MAIN_FIN_ANGLES_OF_ATTACK[ 2 ],
-				CURRENT_LIFT_FORCE_FIN_IN_NEWTONS_MODIFIED
+				( ATTACKANGLESFINTABLE[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ][ 1 ] + FLAPANGLEVECTOR1 ),
+				( ATTACKANGLESFINTABLE[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ][ 2 ] + FLAPANGLEVECTOR2 ),
+				( CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP )
 
 			) )
 
-			-- Store some data ( can be viewed by player )
+			-- ///////////////////////////////////////////////////////////////////////////////
+			-- STORE STORE STORE STORE STORE STORE STORE STORE STORE STORE STORE STORE STORE
+			-- ///////////////////////////////////////////////////////////////////////////////
+
+			-- Store some data ( can be viewed by player ) [ FIN ]
 			FINOS_AddDataToEntFinTable( entParent, "fin_os__EntAngleProperties", {
 
-				Main_Fin_BaseAngle = ANGLEPROPERTIESTABLE[ "Main_Fin_BaseAngle" ],
-				Main_Fin_AttackAngle_Pitch = CURRENT_ATTACK_ANGLE,
-				Main_Fin_AttackAngle_RollCosinus = CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS,
-				Flap_Fin_BaseAngle = ANGLEPROPERTIESTABLE[ "Flap_Fin_BaseAngle" ]
+				BaseAngle = ANGLEPROPERTIESTABLE[ "BaseAngle" ],
+				AttackAngle_Pitch = ATTACKANGLESFINTABLE[ "CURRENT_ATTACK_ANGLE" ],
+				AttackAngle_RollCosinus = ATTACKANGLESFINTABLE[ "CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS" ]
 
-			} )
-			
+			}, nil, "ID0" )
+
+			-- Store some data for flap ( can be viewed by player ) [ FLAP ]
+			if ENT_FLAP:IsValid() and ATTACKANGLESFROMFLAPTABLE then
+
+				FINOS_AddDataToEntFinTable( ENT_FLAP, "fin_os__EntAngleProperties", {
+
+					AttackAngle_Pitch = ATTACKANGLESFROMFLAPTABLE[ "CURRENT_ATTACK_ANGLE" ],
+					AttackAngle_RollCosinus = ATTACKANGLESFROMFLAPTABLE[ "CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS" ]
+	
+				}, nil, "ID1" )
+
+			end
+
 			FINOS_AddDataToEntFinTable( entParent, "fin_os__EntPhysicsProperties", {
 
 				VelocityKmH = CURRENT_VELOCITY_KmHour,
-				LiftForceNewtonsModified_beingUsed = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS_MODIFIED,
-				LiftForceNewtonsNotModified = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS,
+				LiftForceNewtonsModified_beingUsed = ( CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP ),
+				LiftForceNewtonsNotModified = ( CURRENT_LIFT_FORCE_IN_NEWTONS__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP ),
 				AreaMeterSquared = CURRENT_AREA_METER
 
-			} )
+			}, nil, "ID2" )
+
+			-- ///////////////////////////////////////////////////////////////////////////////
+			-- STORE STORE STORE STORE STORE STORE STORE STORE STORE STORE STORE STORE STORE
+			-- TELL TELL TELL TELL TELL TELL TELL TELL TELL TELL TELL TELL TELL TELL TELL TELL
+			-- ///////////////////////////////////////////////////////////////////////////////
 
 			-- Updated tracked fins for players, if any player has this fin as the tracked one
 			for _, OWNER in pairs( player.GetAll() ) do
@@ -134,17 +202,37 @@ function ENT:ApplyForceLiftToFinWing( entParent )
 
 				if finBeingTrackedByPlayer:IsValid() and finBeingTrackedByPlayer == entParent then
 
-					-- Store, so it can be viewed on client side
-					FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", {
+					local FLAPATTACKANGLE = 0
+					local FLAPROLLFRACTION = 0
 
-						FinBeingTracked = finBeingTrackedByPlayer,
-						Main_Fin_AttackAngle_Pitch = CURRENT_ATTACK_ANGLE,
-						VelocityKmH = CURRENT_VELOCITY_KmHour,
-						LiftForceNewtonsModified_beingUsed = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS_MODIFIED,
-						LiftForceNewtonsNotModified = CURRENT_LIFT_FORCE_FIN_IN_NEWTONS,
-						AreaMeterSquared = CURRENT_AREA_METER
+					if ENT_FLAP:IsValid() and ATTACKANGLESFROMFLAPTABLE then
+
+						FLAPATTACKANGLE = ATTACKANGLESFROMFLAPTABLE[ "CURRENT_ATTACK_ANGLE" ]
+						FLAPROLLFRACTION = ATTACKANGLESFROMFLAPTABLE[ "CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS" ]
 		
-					}, OWNER )
+					end
+
+					if ATTACKANGLESFINTABLE then
+
+						local FINATTACKANGLE = ATTACKANGLESFINTABLE[ "CURRENT_ATTACK_ANGLE" ]
+						local FINROLLFRACTION = ATTACKANGLESFINTABLE[ "CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS" ]
+
+						-- Store, so it can be viewed on client side
+						FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", {
+
+							FinBeingTracked = finBeingTrackedByPlayer,
+							AttackAngle_Pitch_FIN = FINATTACKANGLE,
+							AttackAngle_RollCosinus_FIN = FINROLLFRACTION,
+							AttackAngle_Pitch_FLAP = FLAPATTACKANGLE,
+							AttackAngle_RollCosinus_FLAP = FLAPROLLFRACTION,
+							VelocityKmH = CURRENT_VELOCITY_KmHour,
+							LiftForceNewtonsModified_beingUsed = CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FIN,
+							LiftForceNewtonsNotModified = CURRENT_LIFT_FORCE_IN_NEWTONS__FIN,
+							AreaMeterSquared = CURRENT_AREA_METER
+			
+						}, OWNER, "ID3" )
+
+					end
 
 				end
 

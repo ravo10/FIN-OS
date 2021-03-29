@@ -13,28 +13,28 @@ ENT.Instructions	= "Use it with the custom FIN OS SWEP."
 
 function ENT:SetupDataTables()
 
-    self:NetworkVar("Vector", 0, "VelocityPointA")
-    self:NetworkVar("Vector", 1, "VelocityPointB")
+    self:NetworkVar( "Vector", 0, "VelocityPointA" )
+    self:NetworkVar( "Vector", 1, "VelocityPointB" )
 
-    self:NetworkVar("String", 0, "VelocityTimeA")
-    self:NetworkVar("String", 1, "VelocityTimeB")
+    self:NetworkVar( "String", 0, "VelocityTimeA" )
+    self:NetworkVar( "String", 1, "VelocityTimeB" )
 
-    self:NetworkVar("Bool", 0, "PointAAndTimeAAvailable")
-    self:NetworkVar("Bool", 1, "PointBAndTimeBAvailable")
-    self:NetworkVar("Bool", 2, "AllPointsAndTimesAvailable")
+    self:NetworkVar( "Bool", 0, "PointAAndTimeAAvailable" )
+    self:NetworkVar( "Bool", 1, "PointBAndTimeBAvailable" )
+    self:NetworkVar( "Bool", 2, "AllPointsAndTimesAvailable" )
     
     -- First time setup
     if SERVER then
 
-        self:SetVelocityPointA(Vector(0, 0, 0))
-        self:SetVelocityPointB(Vector(0, 0, 0))
+        self:SetVelocityPointA( Vector(0, 0, 0) )
+        self:SetVelocityPointB( Vector(0, 0, 0) )
 
-        self:SetVelocityTimeA("0")
-        self:SetVelocityTimeB("0")
+        self:SetVelocityTimeA( "0" )
+        self:SetVelocityTimeB( "0" )
 
-        self:SetPointAAndTimeAAvailable(false)
-        self:SetPointBAndTimeBAvailable(false)
-        self:SetAllPointsAndTimesAvailable(false)
+        self:SetPointAAndTimeAAvailable( false )
+        self:SetPointBAndTimeBAvailable( false )
+        self:SetAllPointsAndTimesAvailable( false )
 
     end
 

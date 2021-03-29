@@ -55,7 +55,7 @@ SWEP.Secondary.Ammo         = "none"
 SWEP.CanHolster = true
 SWEP.CanDeploy  = true
 
-SWEP.ShouldDropOnDie = false
+SWEP.ShouldDropOnDie = true
 
 -- Very important
 SWEP.IronSightsPos = Vector( 0, 0, 0 )
@@ -65,6 +65,21 @@ cleanup.Register( "fin_os" )
 
 util.PrecacheModel( SWEP.ViewModel )
 util.PrecacheModel( SWEP.WorldModel )
+
+function SWEP:SetupDataTables()
+
+    self:NetworkVar("Entity", 0, "TempFlapRelatedEntity0")
+    self:NetworkVar("Entity", 1, "TempFlapRelatedEntity1")
+    
+    -- First time setup
+    if SERVER then
+
+        self:SetTempFlapRelatedEntity0( nil )
+        self:SetTempFlapRelatedEntity1( nil )
+
+    end
+
+end
 
 -- Data manipulation
 local function WriteFinOSTableData( ent, entTableID, _table ) -- This is getting called SERVER and CLIENT side
@@ -103,11 +118,11 @@ if CLIENT then
 
 end
 
-function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player )
+function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player, ID )
 
     if SERVER then
 
-        if not ent or not ent:IsValid() then return print( "FINOS_AddDataToEntFinTable: 'ent' is not valid. ID: "..entTableID.."." ) end
+        if not ent or not ent:IsValid() then return print( "FINOS_AddDataToEntFinTable: 'ent' is not valid. entTableID: "..entTableID..". ID: "..ID ) end
 
         WriteFinOSTableData( ent, entTableID, _table )
 
@@ -126,9 +141,9 @@ function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player )
     end
 
 end
-function FINOS_GetDataToEntFinTable( ent, entTableID )
+function FINOS_GetDataToEntFinTable( ent, entTableID, ID )
 
-    if not ent or not ent:IsValid() then return print( "FINOS_GetDataToEntFinTable: 'ent' is not valid. ID: "..entTableID.."." ) end
+    if not ent or not ent:IsValid() then return print( "FINOS_GetDataToEntFinTable: 'ent' is not valid. entTableID: "..entTableID..". ID: "..ID ) end
 
     if ent[ "FinOS_data" ] and ent[ "FinOS_data" ][ entTableID ] then
 

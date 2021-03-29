@@ -3,7 +3,7 @@ function SWEP:SecondaryAttack()
     local tr = self:GetTrace()
     if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() ) then return false end
 
-    local OWNER = self.Owner
+    local OWNER = self:GetOwner()
     local ENT = tr.Entity
 
     if ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_active" ) then

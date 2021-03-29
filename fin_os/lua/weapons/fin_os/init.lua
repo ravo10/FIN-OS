@@ -12,6 +12,8 @@ AddCSLuaFile( "cl_viewscreen.lua" )
 AddCSLuaFile( "shared.lua" )
 include( "shared.lua" )
 
+AddCSLuaFile( "hooks/hooks.lua" )
+include("hooks/hooks.lua")
 AddCSLuaFile( "hooks/cl_hooks.lua" )
 
 AddCSLuaFile( "primary_attack.lua" )
@@ -23,7 +25,27 @@ AddCSLuaFile( "reload.lua" )
 -- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
 -- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
 -- ///////////////////////////////////////////////////////////////////////////////
-FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE = 10
+
+CreateConVar(
+    "finos_rhodensistyfluidvalue",
+    1.29,
+    FCVAR_PROTECTED,
+    "Mass density (rho) that will be applied to Fin OS fin."
+)
+CreateConVar(
+    "finos_maxscalarvalue",
+    69,
+    FCVAR_PROTECTED,
+    "Maximum scalar value a player can apply to a Fin OS fin."
+)
+
+FIN_OS_NOTIFY_GENERIC = 0
+FIN_OS_NOTIFY_ERROR = 1
+FIN_OS_NOTIFY_UNDO = 2
+FIN_OS_NOTIFY_HINT = 3
+FIN_OS_NOTIFY_CLEANUP = 4
+
+FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE = 1
 
 SWEP.Weight = 5
 SWEP.AutoSwitchTo = false
@@ -31,15 +53,29 @@ SWEP.AutoSwitchFrom = false
 
 function SWEP:Initialize() end
 
-function SWEP:ShouldDropOnDie() return true end
+function SWEP:OnDrop()
+    
+    self:SetTempFlapRelatedEntity0( nil )
+    self:SetTempFlapRelatedEntity1( nil )
 
-CreateConVar( "sbox_maxfin_os", 2 )
+end
+function SWEP:Holster( Weapon )
+    
+    self:SetTempFlapRelatedEntity0( nil )
+    self:SetTempFlapRelatedEntity1( nil )
+
+    return true
+
+end
+
+CreateConVar( "sbox_maxfin_os", 20 )
 
 hook.Add( "Initialize", "fin_os:Initialize", function()
 
     -- Add Network Strings
     util.AddNetworkString("FINOS_UpdateEntityTableValue_CLIENT")
     util.AddNetworkString("FINOS_UpdateEntityScalarLiftForceValue_CLIENT")
+    util.AddNetworkString("FINOS_SendLegacyNotification_CLIENT")
 
 end )
 
@@ -55,10 +91,10 @@ if SERVER then
     duplicator.RegisterEntityModifier( "FinOS", function( Player, Entity, Data )
 
         -- Write duplicator settings for entity
-        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPoints", Data[ "AREAPOINTSTABLE" ] )
-        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaVectors", Data[ "AREAVECTORSTABLE" ] )
-        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAngleProperties", Data[ "ANGLEPROPERTIESTABLE" ] )
-        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", Data[ "PHYSICSPROPERTIESSTABLE" ] )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPoints", Data[ "AREAPOINTSTABLE" ], nil, "ID4" )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaVectors", Data[ "AREAVECTORSTABLE" ], nil, "ID5" )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAngleProperties", Data[ "ANGLEPROPERTIESTABLE" ], nil, "ID6" )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", Data[ "PHYSICSPROPERTIESSTABLE" ], nil, "ID7" )
 
         local DUPLICATEDENTITY = Data[ "DUPLICATEDENTITY" ]
 
@@ -87,25 +123,24 @@ if SERVER then
 
     function FINOS_UpdateDuplicatorDataForEntity( Entity ) -- The new entity will have this data
 
-        local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints" )
+        local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID3" )
         --[[ IDs:
             vCPLFin_Area_Units
             vCPLFin_Area_Foot
             vCPLFin_Area_Meter
             pointsUsed
          ]]
-        local AREAVECTORSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaVectors" )
+        local AREAVECTORSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaVectors", "ID4" )
         --[[ Array:
             Vector(x, y, z), Vector(x, y, z), Vector(x, y, z) ...
          ]]
-        local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAngleProperties" )
+        local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAngleProperties", "ID5" )
         --[[ IDs:
-            Main_Fin_BaseAngle
-            Main_Fin_AttackAngle_Pitch
-            Main_Fin_AttackAngle_RollCosinus
-            Flap_Fin_BaseAngle
+            BaseAngle
+            AttackAngle_Pitch
+            AttackAngle_RollCosinus
          ]]
-        local PHYSICSPROPERTIESSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties" )
+        local PHYSICSPROPERTIESSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", "ID6" )
         --[[ IDs:
             VelocityKmH
             LiftForceNewtonsModified_beingUsed
@@ -149,7 +184,7 @@ function SWEP:DoShootEffect( hitpos, hitnormal, entity, physbone, bFirstTimePred
 
 	-- There's a bug with the model that's causing a muzzle to
 	-- appear on everyone's screen when we fire this animation.
-	self.Owner:SetAnimation( PLAYER_ATTACK1 ) -- 3rd Person Animation
+	self:GetOwner():SetAnimation( PLAYER_ATTACK1 ) -- 3rd Person Animation
 
 	if ( not bFirstTimePredicted ) then return end
 
@@ -162,7 +197,7 @@ function SWEP:DoShootEffect( hitpos, hitnormal, entity, physbone, bFirstTimePred
 
 	local effectdata = EffectData()
 	effectdata:SetOrigin( hitpos )
-	effectdata:SetStart( self.Owner:GetShootPos() )
+	effectdata:SetStart( self:GetOwner():GetShootPos() )
 	effectdata:SetAttachment( 1 )
 	effectdata:SetEntity( self )
 	util.Effect( "ToolTracer", effectdata )
@@ -174,7 +209,7 @@ function SWEP:SetAreaPointsForFin( tr )
     local ENT = tr.Entity
 
     -- Get old area points if any
-    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints" )
+    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints", "ID7" )
     local amountOfPointsUsed = #AREAPOINTSTABLE
 
     -- If you got 26, then cancel
@@ -185,19 +220,25 @@ function SWEP:SetAreaPointsForFin( tr )
 
         -- Store some data
         table.insert( AREAPOINTSTABLE, localHitPos )
-        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPoints", AREAPOINTSTABLE )
+        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPoints", AREAPOINTSTABLE, nil,"ID8" )
         amountOfPointsUsed = #AREAPOINTSTABLE
 
         local alfabethTable = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
         self:AlertPlayer( "Added local area point: "..alfabethTable[ amountOfPointsUsed ].."("..math.Round( localHitPos[1] )..", "..math.Round( localHitPos[2] )..", "..math.Round( localHitPos[3] )..")" )
 
+        if amountOfPointsUsed == 1 then
+            
+            self:AlertPlayer( "*Add two or more points.." )
+            FINOS_SendNotification( "Add two or more points..", FIN_OS_NOTIFY_GENERIC, OWNER, 1.3 )
+        
+        end
     end
 
 end
 function SWEP:CalculateAreaForFinBasedOnAreaPoints( ent, owner )
 
     -- Get area points if any
-    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ent, "fin_os__EntAreaPoints" )
+    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ent, "fin_os__EntAreaPoints", "ID8" )
     local amountOfPointsUsed = #AREAPOINTSTABLE
 
     -- Calculate area
@@ -233,23 +274,26 @@ function SWEP:CalculateAreaForFinBasedOnAreaPoints( ent, owner )
             vCPLFin_Area_Foot = math.Round( combinedLength_Area_Foot, 2 ),
             vCPLFin_Area_Meter = math.Round( combinedLength_Area_Meter, 2 ),
             pointsUsed = amountOfPointsUsed
-        } )
+        }, nil, "ID9" )
 
         local currentEntAngle = ent:GetAngles()
 
         FINOS_AddDataToEntFinTable( ent, "fin_os__EntAngleProperties", {
-            Main_Fin_BaseAngle = currentEntAngle
-        } )
+
+            BaseAngle = currentEntAngle
+
+        }, nil, "ID10" )
 
         self:AlertPlayer( "Current area between vectors: "..self:GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ].." m²" )
         self:AlertPlayer( "Current base angle (P, Y, R) set to: ("..math.Round( currentEntAngle[ 1 ] )..", "..math.Round( currentEntAngle[ 2 ] )..", "..math.Round( currentEntAngle[ 3 ] )..")" )
+        FINOS_SendNotification( "Fin configured! Area is "..self:GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ].." m²", FIN_OS_NOTIFY_HINT, OWNER, 3.5 )
 
     end
 
 end
 function SWEP:GetAreaForFin( ent )
 
-    return FINOS_GetDataToEntFinTable( ent, "fin_os__EntAreaVectors" )
+    return FINOS_GetDataToEntFinTable( ent, "fin_os__EntAreaVectors", "ID9" )
 
 end
 
@@ -318,6 +362,114 @@ function FINOS_VectorCrossProduct( vectorA, vectorB, round )
 
 end
 
+-- Notify
+function FINOS_SendNotification( string, type, player, lifeSeconds )
+
+    if not lifeSeconds or lifeSeconds <= 0 then lifeSeconds = 2 end
+
+    net.Start( "FINOS_SendLegacyNotification_CLIENT" )
+
+        net.WriteTable({
+
+            string = string,
+            type = type,
+            lifeSeconds = lifeSeconds
+
+        })
+
+    if player then net.Send( player ) else net.Broadcast() end
+
+end
+
+-- For calculating attack angles on air
+function FINOS_CalculateAttackAnglesDegreesFor_CL( ent )
+
+    if not ent:IsValid() then return nil end
+
+	local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( ent, "fin_os__EntAngleProperties", "ID10" )
+
+	local ENT_MAIN_BASE_ANGLES = ANGLEPROPERTIESTABLE[ "BaseAngle" ]
+	local CURRENT_ENT_ANGLES = ent:GetAngles()
+
+    if not ANGLEPROPERTIESTABLE[ "BaseAngle" ] then return nil end
+
+	local CURRENT_MAIN_ANGLES_OF_ATTACK = Angle(
+		( CURRENT_ENT_ANGLES[ 1 ] - ENT_MAIN_BASE_ANGLES[ 1 ] ),
+		( CURRENT_ENT_ANGLES[ 2 ] - ENT_MAIN_BASE_ANGLES[ 2 ] ),
+		( CURRENT_ENT_ANGLES[ 3 ] - ENT_MAIN_BASE_ANGLES[ 3 ] )
+	)
+
+	local CURRENT_ANGLE_OF_ATTACK_PITCH = CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ]
+	local CURRENT_ANGLE_OF_ATTACK_ROLL = CURRENT_MAIN_ANGLES_OF_ATTACK[ 3 ]
+	local CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = math.Round( math.cos( math.rad(CURRENT_ANGLE_OF_ATTACK_ROLL) ) )
+
+	-- Being used
+	local CURRENT_ATTACK_ANGLE = ( CURRENT_ANGLE_OF_ATTACK_PITCH * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS )
+	CURRENT_MAIN_ANGLES_OF_ATTACK = ( CURRENT_MAIN_ANGLES_OF_ATTACK * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS )
+
+	return {
+
+		CURRENT_ATTACK_ANGLE = CURRENT_ATTACK_ANGLE,
+		CURRENT_MAIN_ANGLES_OF_ATTACK = CURRENT_MAIN_ANGLES_OF_ATTACK,
+		CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS,
+
+	}
+
+end
+function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity, VelocityMetersPerSecond, AreaMeter, Scalar )
+
+    if not AttackAnglesDegreesTable or not RhoMassDensity or not VelocityMetersPerSecond or not AreaMeter or not Scalar then
+
+        print( "FINOS_CalculateLiftForce Error: One or more parameter is nil" ) return nil
+
+    end
+
+    -- ** Calculate Force[LIFT]. Uses formula ( This formula is used in real world applications aswell ): ** --
+    -- F_lift[N] = .5 * rho_air[kg/m^3] * Velocity[m/s]^2 * Area[m^2] * C_lift[Angle of attack on air (WING AND FLAP combined)]
+    -- https://wright.nasa.gov/airplane/lifteq.html
+
+    -- Angles ( C[Lift] )
+    local CURRENT_ATTACK_ANGLE_DEGREES_PRE = AttackAnglesDegreesTable[ "CURRENT_ATTACK_ANGLE" ]
+    local CURRENT_ATTACK_ANGLE_DEGREES_COSINUS = math.cos( math.rad( CURRENT_ATTACK_ANGLE_DEGREES_PRE ) )
+    -- When the angle becomes 0 (stall), then we still want to give some type of lift [ FIN ]
+    local CURRENT_ATTACK_ANGLE_DEGREES = math.deg( math.acos( math.sin( CURRENT_ATTACK_ANGLE_DEGREES_COSINUS ) ) )
+    local CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = AttackAnglesDegreesTable[ "CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS" ]
+
+    local CURRENT_MAIN_ANGLES_OF_ATTACK = AttackAnglesDegreesTable[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ]
+
+    -- ** The LIFT Force [ Coefficient ] **
+    local CURRENT_CL = 2 * math.pi * math.rad( CURRENT_ATTACK_ANGLE_DEGREES )
+
+    -- ** The LIFT Force **
+    local CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = ( 0.5 * RhoMassDensity * math.pow( VelocityMetersPerSecond, 2 ) * AreaMeter )
+    local CURRENT_LIFT_FORCE_IN_NEWTONS = ( CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE * CURRENT_CL )
+
+    -- ** The LIFT Force used IN-GAME **
+    local FLAP_LIFT_FORCE_NEWTON = 0
+    if ent:GetNWBool( "fin_os_is_a_fin_flap" ) then
+
+        -- Want to directly affect lift positivly or negativly with the attack angle of the flap ( use the preset angle ) [ FLAP ]
+        local NEW_CURRENT_CL = 2 * math.pi * math.rad( CURRENT_ATTACK_ANGLE_DEGREES_PRE )
+        FLAP_LIFT_FORCE_NEWTON = ( 0.5 * RhoMassDensity * math.pow( VelocityMetersPerSecond, 2 ) * AreaMeter * NEW_CURRENT_CL )
+
+        CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED = ( FLAP_LIFT_FORCE_NEWTON * Scalar )
+
+    else
+
+        CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED = ( CURRENT_LIFT_FORCE_IN_NEWTONS * Scalar )
+
+    end
+
+    return {
+
+        CURRENT_LIFT_FORCE_IN_NEWTONS = CURRENT_LIFT_FORCE_IN_NEWTONS,
+        CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED = CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED,
+        CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE
+
+    }
+
+end
+
 -- Fin's Wings Brain ( final step )
 function FINOS_AddFinWingEntity( ent, owner, duplication )
 
@@ -373,50 +525,6 @@ end
 -- ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION
 -- ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION ACTION
 -- ///////////////////////////////////////////////////////////////////////////////
-
-hook.Add( "SetupMove", "mbd:SetupMove001", function( pl, mv, cmd )
-
-    if mv:KeyDown( IN_USE ) then
-
-        local mouseWheelScrollDelta = cmd:GetMouseWheel()
-
-        -- Change the slowdown effect up or down
-        if mouseWheelScrollDelta ~= 0 then
-
-            local ENT = pl:GetEyeTrace().Entity
-
-            if ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_active" ) and pl:GetActiveWeapon():GetClass() == "fin_os" then
-
-                local scalarValue = ENT[ "FinOS_LiftForceScalarValue" ]
-                if not scalarValue then ENT[ "FinOS_LiftForceScalarValue" ] = FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE end
-
-                local newScalarValue = scalarValue
-
-                if mouseWheelScrollDelta > 0 then newScalarValue = newScalarValue + 1 else newScalarValue = newScalarValue - 1 end
-                if newScalarValue < 1 then newScalarValue = 1 elseif newScalarValue > 396 then newScalarValue = 396 end
-
-                -- Store new scalar value
-                ENT[ "FinOS_LiftForceScalarValue" ] = newScalarValue
-
-                -- Send to client
-                net.Start( "FINOS_UpdateEntityScalarLiftForceValue_CLIENT" )
-
-                    net.WriteTable({
-
-                        ent = ENT,
-                        FinOS_LiftForceScalarValue = newScalarValue
-
-                    })
-                
-                net.Broadcast()
-
-            end
-
-        end
-
-    end
-
-end )
 
 include( "primary_attack.lua" )
 include( "secondary_attack.lua" )
