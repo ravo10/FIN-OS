@@ -72,7 +72,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     backgroundPosY,
                     300,
                     156,
-                    Color( 128, 0, 255, 240 ) -- purple
+                    Color( 18, 220, 255, 200 ) -- lightBlue
                 )
 
                 draw.DrawText(
@@ -88,7 +88,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "GModToolHelp",
                     ( backgroundPosX - 97 + 20 ),
                     ( backgroundPosY + 20 ),
-                    Color( 236, 236, 236, 255 ),
+                    Color( 255, 255, 255, 255 ),
                     TEXT_ALIGN_LEFT
                 )
 
@@ -104,7 +104,11 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             if ENT_FLAP:IsValid() then
 
                 FlapSettingsTable = FINOS_GetDataToEntFinTable( ENT_FLAP, "fin_os__EntAngleProperties", "ID17" )
-                pitchAttackAngle_FLAP = math.Round( FlapSettingsTable[ "AttackAngle_Pitch" ] )
+                if FlapSettingsTable and FlapSettingsTable[ "AttackAngle_Pitch" ] then
+
+                    pitchAttackAngle_FLAP = math.Round( FlapSettingsTable[ "AttackAngle_Pitch" ] )
+
+                end
 
             end
             local FinPhysicsPropertiesTable = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntPhysicsProperties", "ID13" )
@@ -137,7 +141,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
 
                 draw.DrawText(
-                    "Air Attack Angle: "..pitchAttackAngle.."˚ | "..pitchAttackAngle_FLAP.."˚",
+                    "Air Attack Angle: " .. pitchAttackAngle.. "˚ | " .. pitchAttackAngle_FLAP.. "˚",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 ),
@@ -145,7 +149,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     TEXT_ALIGN_LEFT
                 )
                 draw.DrawText(
-                    "Roll Angle Cosinus Fraction: "..rollCosinusFraction,
+                    "Roll Angle Cosinus Fraction: " .. rollCosinusFraction,
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 2 ),
@@ -154,7 +158,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
 
                 draw.DrawText(
-                    "Speed: "..speed.." km/h",
+                    "Speed: " .. speed.. " km/h",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 ),
@@ -162,7 +166,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     TEXT_ALIGN_LEFT
                 )
                 draw.DrawText(
-                    "Force[LIFT]: "..force_lift.." N",
+                    "Force[LIFT]: " .. force_lift.. " N",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 ),
@@ -170,7 +174,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     TEXT_ALIGN_LEFT
                 )
                 draw.DrawText(
-                    "Area: "..area_meter_squared.." m²",
+                    "Area: " .. area_meter_squared.. " m²",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 3 ),
@@ -179,7 +183,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
                 
                 draw.DrawText(
-                    "Wing correct way up?: "..WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
+                    "Wing correct way up?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 ),
@@ -188,7 +192,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
                 
                 draw.DrawText(
-                    "Scalar ( Force[LIFT] ): "..ENT[ "FinOS_LiftForceScalarValue" ],
+                    "Scalar ( Force[LIFT] ): " .. ENT[ "FinOS_LiftForceScalarValue" ],
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 * 2 ),
@@ -217,30 +221,6 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 draw.RoundedBox( 8,
                     backgroundPosX,
-                    ( backgroundPosY - 60 - 5 ),
-                    300,
-                    60,
-                    Color( 90, 90, 90, 110 ) -- light Gray
-                )
-                draw.DrawText(
-                    "FIN OS",
-                    "Trebuchet24",
-                    ( backgroundPosX + 60 ),
-                    ( backgroundPosY - 45 ),
-                    textColor,
-                    TEXT_ALIGN_LEFT
-                )
-                draw.DrawText(
-                    "(ravo Norway)",
-                    "HudSelectionText",
-                    ( backgroundPosX + 150 ),
-                    ( backgroundPosY - 45 ),
-                    textColor,
-                    TEXT_ALIGN_LEFT
-                )
-
-                draw.RoundedBox( 8,
-                    backgroundPosX,
                     backgroundPosY,
                     300,
                     110,
@@ -248,7 +228,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
 
                 draw.DrawText(
-                    "Air Attack Angle: "..pitchAttackAngle.."˚ (important)",
+                    "Air Attack Angle: " .. pitchAttackAngle.. "˚ (important)",
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 ),
@@ -256,7 +236,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     TEXT_ALIGN_LEFT
                 )
                 draw.DrawText(
-                    "Roll Angle Cosinus Fraction: "..rollCosinusFraction,
+                    "Roll Angle Cosinus Fraction: " .. rollCosinusFraction,
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 2 ),
@@ -265,7 +245,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
                 
                 draw.DrawText(
-                    "Flap correct way up?: "..WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
+                    "Flap correct way up?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 ),
@@ -300,13 +280,13 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 backgroundPosY,
                 width,
                 77,
-                Color( 255, 255, 0, 160 ) -- GreenYellow
+                Color( 255, 238, 170, 203 ) -- lightYellow
             )
 
             local textColor = Color( 0, 0, 0, 220 )
 
             draw.DrawText(
-                "AAA: "..pitchAttackAngle.."˚ | "..pitchAttackAngle_FLAP.."˚",
+                "AAA: " .. pitchAttackAngle.. "˚ | " .. pitchAttackAngle_FLAP.. "˚",
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 ),
@@ -314,7 +294,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 TEXT_ALIGN_LEFT
             )
             draw.DrawText(
-                "U up ?: "..WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
+                "U up ?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 + 12 ),
@@ -323,7 +303,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             )
 
             draw.DrawText(
-                "Speed: "..speed.." km/h",
+                "Speed: " .. speed.. " km/h",
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 * 3 + 12 + 4 ),
@@ -331,7 +311,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 TEXT_ALIGN_LEFT
             )
             draw.DrawText(
-                "Force[LIFT]: "..force_lift.." N",
+                "Force[LIFT]: " .. force_lift.. " N",
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 * 3 + 12 * 2 + 4 ),
@@ -400,11 +380,11 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
                     point1 = ENT:LocalToWorld( v )
                     point2 = ENT:LocalToWorld( FinAreaPointsTable[ k + 1 ] )
 
-                    render.DrawLine( point1, point2, Color( 255, 121, 0 ), true )
+                    render.DrawLine( point1, point2, Color( 170, 255, 170 ), true )
 
                     if ( k + 1 ) == #FinAreaPointsTable then
 
-                        render.DrawLine( point2, ENT:LocalToWorld( FinAreaPointsTable[ 1 ] ), Color( 255, 121, 0 ), true )
+                        render.DrawLine( point2, ENT:LocalToWorld( FinAreaPointsTable[ 1 ] ), Color( 255, 94, 94 ), true )
 
                     end
 

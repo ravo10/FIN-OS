@@ -122,7 +122,7 @@ function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player, ID )
 
     if SERVER then
 
-        if not ent or not ent:IsValid() then return print( "FINOS_AddDataToEntFinTable: 'ent' is not valid. entTableID: "..entTableID..". ID: "..ID ) end
+        if not ent or not ent:IsValid() then return print( "FINOS_AddDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID.. ". ID: " .. ID ) end
 
         WriteFinOSTableData( ent, entTableID, _table )
 
@@ -143,7 +143,7 @@ function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player, ID )
 end
 function FINOS_GetDataToEntFinTable( ent, entTableID, ID )
 
-    if not ent or not ent:IsValid() then return print( "FINOS_GetDataToEntFinTable: 'ent' is not valid. entTableID: "..entTableID..". ID: "..ID ) end
+    if not ent or not ent:IsValid() then return print( "FINOS_GetDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID.. ". ID: " .. ID ) end
 
     if ent[ "FinOS_data" ] and ent[ "FinOS_data" ][ entTableID ] then
 

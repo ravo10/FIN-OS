@@ -73,12 +73,20 @@ function SWEP:PrimaryAttack()
 
                 ENT_FIN:SetNWEntity( "fin_os_flapEntity", ENT_FLAP )
 
-                self:AlertPlayer( "[FLAP] Current base angle (P, Y, R) set to: ("..math.Round( currentEntAngle[ 1 ] )..", "..math.Round( currentEntAngle[ 2 ] )..", "..math.Round( currentEntAngle[ 3 ] )..")" )
+                self:AlertPlayer( "[FLAP] Current base angle (P, Y, R) set to: (" .. math.Round( currentEntAngle[ 1 ] ) .. ", " .. math.Round( currentEntAngle[ 2 ] ) .. ", " .. math.Round( currentEntAngle[ 3 ] ) .. ")" )
                 self:AlertPlayer( "[FLAP] Flap added to fin! Area is preset to ¼ of the fin area" )
                 FINOS_SendNotification( "[FLAP] Flap added to fin! Area is ¼ of the fin", FIN_OS_NOTIFY_GENERIC, OWNER, 3.5 )
 
                 self:SetTempFlapRelatedEntity0( nil )
                 self:SetTempFlapRelatedEntity1( nil )
+
+            elseif ENT0:IsValid() and ENT1:IsValid() and not ENT0:GetNWBool( "fin_os_active" ) and not ENT1:GetNWBool( "fin_os_active" ) then
+
+                self:SetTempFlapRelatedEntity0( nil )
+                self:SetTempFlapRelatedEntity1( nil )
+
+                self:AlertPlayer( "[FLAP] Select a Fin and Flap! Try again" )
+                FINOS_SendNotification( "[FLAP] Select a Fin and Flap! Try again", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
 
             end
 

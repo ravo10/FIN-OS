@@ -224,7 +224,7 @@ function SWEP:SetAreaPointsForFin( tr )
         amountOfPointsUsed = #AREAPOINTSTABLE
 
         local alfabethTable = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-        self:AlertPlayer( "Added local area point: "..alfabethTable[ amountOfPointsUsed ].."("..math.Round( localHitPos[1] )..", "..math.Round( localHitPos[2] )..", "..math.Round( localHitPos[3] )..")" )
+        self:AlertPlayer( "Added local area point: " .. alfabethTable[ amountOfPointsUsed ] .. "(" .. math.Round( localHitPos[1] ) .. ", " .. math.Round( localHitPos[2] ) .. ", " .. math.Round( localHitPos[3] ) .. ")" )
 
         if amountOfPointsUsed == 1 then
             
@@ -284,9 +284,9 @@ function SWEP:CalculateAreaForFinBasedOnAreaPoints( ent, owner )
 
         }, nil, "ID10" )
 
-        self:AlertPlayer( "Current area between vectors: "..self:GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ].." m²" )
-        self:AlertPlayer( "Current base angle (P, Y, R) set to: ("..math.Round( currentEntAngle[ 1 ] )..", "..math.Round( currentEntAngle[ 2 ] )..", "..math.Round( currentEntAngle[ 3 ] )..")" )
-        FINOS_SendNotification( "Fin configured! Area is "..self:GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ].." m²", FIN_OS_NOTIFY_HINT, OWNER, 3.5 )
+        self:AlertPlayer( "Current area between vectors: " .. self:GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ] .. " m²" )
+        self:AlertPlayer( "Current base angle (P, Y, R) set to: (" .. math.Round( currentEntAngle[ 1 ] ) .. ", " .. math.Round( currentEntAngle[ 2 ] ) .. ", " .. math.Round( currentEntAngle[ 3 ] ) .. ")" )
+        FINOS_SendNotification( "Fin configured! Area is " .. self:GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ] .. " m²", FIN_OS_NOTIFY_HINT, OWNER, 3.5 )
 
     end
 

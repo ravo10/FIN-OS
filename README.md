@@ -21,6 +21,8 @@
 * **finos_rhodensistyfluidvalue** ( def. = 1.29 ) [ FCVAR_PROTECTED ] - Mass density (rho) that will be applied to Fin OS fin.
 * **finos_maxscalarvalue** ( def. = 69 ) [ FCVAR_PROTECTED ] - Maximum scalar value a player can apply to a Fin OS fin.
 
+**[FIN OS Tool on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261)**
+
 ## BETA
 ### 0.0.1 ( 28.03.21 )
 - Basic functionality
@@ -41,9 +43,22 @@
 - Added ConVar "finos_rhodensistyfluidvalue" and "finos_maxscalarvalue"
 - Fixed bugs
 - Cleaned up and improved code
+### 0.0.41 ( 30.03.21 )
+- Updated entity icon
+- Updated GUI colors to match new logo
 
 ## @todo
 - BUG: Check if any vector lines (two points) are intersecting for area, and do not allow that
 
+## Licence
+This addon is created by [ravo (Norway)](https://steamcommunity.com/sharedfiles/filedetails/?id=1647345157) or the uploader of this current viewed [SWEP](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261) on Steam Workshop.
+All of the custom code created by the creator/uploader (this site), that is given for FIN OS Tool, is supplied under the: [CC BY-NC-SA 4.0 Licence](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en) If not specified otherwise.
+
+### Copyright content
+* The tool model is a modded version of the original Garry's Mod toolgun.
+
 ## Author
 *ravo Norway*
+
+### DONATE (appriciated)
+[PayPal - ravonorway](paypal.me/ravonorway)
