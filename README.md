@@ -1,11 +1,13 @@
 # FIN OS Tool (FIN OPEN SOURCE)
 
+**[FIN OS Tool on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261)**
+
 ### How to use:
 * You can find the stand alone tool under: ***Weapons => ravo Norway => Fin OS Tool***
 * **Left-Click to apply** 3 - 26 local origo originated vector points on prop, to get started. This will calculate the area using the length of the cross products
 * **( IN_USE + Left-Click ) to add** a flap. Connect by clicking on the fin/flap and on the flap/fin
 * **Right-Click to add** fin to *tracked fin table*
-* **Reload to remove** fin from prop
+* **Reload to remove** fin/flap from prop
 * **( IN_USE + SCROLL_WHEEL ) to increase** the scalar value. Look at the fin you want to scale up/down
 
 ### How it works:
@@ -21,8 +23,6 @@
 * **finos_rhodensistyfluidvalue** ( def. = 1.29 ) [ FCVAR_PROTECTED ] - Mass density (rho) that will be applied to Fin OS fin.
 * **finos_maxscalarvalue** ( def. = 69 ) [ FCVAR_PROTECTED ] - Maximum scalar value a player can apply to a Fin OS fin.
 
-**[FIN OS Tool on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261)**
-
 ## BETA
 ### 0.0.1 ( 28.03.21 )
 - Basic functionality
@@ -34,7 +34,7 @@
 - Fixed bugs
 - Cleaned up and improved code
 ### 0.0.3 ( 28.03.21 )
-- Added a way to adjust the scalar [ 1 - 369 ] for lift ( IN_USE + SCROLL_WHEEL )
+- Added a way to adjust the scalar for lift ( IN_USE + SCROLL_WHEEL )
 - Added so the player can view the current scalar for the lift in the default pop-up settings panel
 - Added so the player can Right-Click to view/hide a panel that shows the wing's current speed and attack angle
 ### 0.0.4 ( 29.03.21 )
@@ -46,6 +46,8 @@
 ### 0.0.41 ( 30.03.21 )
 - Updated entity icon
 - Updated GUI colors to match new logo
+### 0.0.42 ( 30.03.21 )
+- Fixed a few minor bugs
 
 ## @todo
 - BUG: Check if any vector lines (two points) are intersecting for area, and do not allow that
@@ -60,5 +62,4 @@ All of the custom code created by the creator/uploader (this site), that is give
 ## Author
 *ravo Norway*
 
-### DONATE (appriciated)
-[PayPal - ravonorway](paypal.me/ravonorway)
+[PayPal - ravonorway](https://paypal.me/ravonorway)
