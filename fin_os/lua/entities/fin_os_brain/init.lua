@@ -48,7 +48,6 @@ function ENT:ApplyForceLiftToFinWing( entParent )
 	if self:GetAllPointsAndTimesAvailable() then
 
 		local AREAVectors = FINOS_GetDataToEntFinTable( entParent, "fin_os__EntAreaVectors", "ID0" )
-		local DRAGVectors = FINOS_GetDataToEntFinTable( entParent, "fin_os__EntDragVectors", "ID1" )
 		
 		-- Variables
 		local CURRENT_AREA_METER = AREAVectors[ "vCPLFin_Area_Meter" ]

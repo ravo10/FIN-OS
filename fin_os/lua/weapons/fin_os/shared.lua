@@ -68,8 +68,10 @@ util.PrecacheModel( SWEP.WorldModel )
 
 function SWEP:SetupDataTables()
 
-    self:NetworkVar("Entity", 0, "TempFlapRelatedEntity0")
-    self:NetworkVar("Entity", 1, "TempFlapRelatedEntity1")
+    self:NetworkVar( "Entity", 0, "TempFlapRelatedEntity0" )
+    self:NetworkVar( "Entity", 1, "TempFlapRelatedEntity1" )
+
+    self:NetworkVar( "Bool", 0, "DisableTool" )
     
     -- First time setup
     if SERVER then
@@ -77,12 +79,14 @@ function SWEP:SetupDataTables()
         self:SetTempFlapRelatedEntity0( nil )
         self:SetTempFlapRelatedEntity1( nil )
 
+        self:SetDisableTool( false )
+
     end
 
 end
 
 -- Data manipulation
-local function WriteFinOSTableData( ent, entTableID, _table ) -- This is getting called SERVER and CLIENT side
+local function WriteFinOSTableData( ent, entTableID, _table, insertTableDontMerge ) -- This is getting called SERVER and CLIENT side
 
     -- Maybe reset the table
     if not _table then
@@ -94,10 +98,19 @@ local function WriteFinOSTableData( ent, entTableID, _table ) -- This is getting
     end
 
     if not ent[ "FinOS_data" ] then ent[ "FinOS_data" ] = {} end
-    if not ent[ "FinOS_data" ][ entTableID ] then ent[ "FinOS_data" ][ entTableID ] = {} end
+        if not ent[ "FinOS_data" ][ entTableID ] then ent[ "FinOS_data" ][ entTableID ] = {} end
 
-    -- Overwrite on SERVER and CLIENT side
-    table.Merge( ent[ "FinOS_data" ][ entTableID ], _table )
+    if insertTableDontMerge then
+
+        -- Insert table into table on SERVER side
+        table.insert( ent[ "FinOS_data" ][ entTableID ], _table )
+
+    else
+
+        -- Overwrite on SERVER and CLIENT side
+        table.Merge( ent[ "FinOS_data" ][ entTableID ], _table )
+
+    end
 
 end
 
@@ -111,8 +124,9 @@ if CLIENT then
         local ent = data[ "ent" ]
         local entTableID = data[ "entTableID" ]
         local _table = data[ "_table" ]
+        local insertTableDontMerge = data[ "insertTableDontMerge" ]
 
-        WriteFinOSTableData( ent, entTableID, _table )
+        WriteFinOSTableData( ent, entTableID, _table, insertTableDontMerge )
 
     end )
 
@@ -132,7 +146,32 @@ function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player, ID )
 
                 ent = ent,
                 entTableID = entTableID,
-                _table = _table
+                _table = _table,
+                insertTableDontMerge = false
+
+            })
+
+        if Player and Player:IsValid() then net.Send( Player ) else net.Broadcast() end
+
+    end
+
+end
+function FINOS_InsertDataToEntFinTable( ent, entTableID, _table, Player, ID )
+
+    if SERVER then
+
+        if not ent or not ent:IsValid() then return print( "FINOS_InsertDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID.. ". ID: " .. ID ) end
+
+        WriteFinOSTableData( ent, entTableID, _table, true )
+
+        net.Start("FINOS_UpdateEntityTableValue_CLIENT")
+
+            net.WriteTable({
+
+                ent = ent,
+                entTableID = entTableID,
+                _table = _table,
+                insertTableDontMerge = true
 
             })
 

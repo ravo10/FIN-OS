@@ -1,7 +1,7 @@
 function SWEP:SecondaryAttack()
 
     local tr = self:GetTrace()
-    if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() ) then return false end
+    if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() or self:GetDisableTool() ) then return false end
 
     local OWNER = self:GetOwner()
     local ENT = tr.Entity

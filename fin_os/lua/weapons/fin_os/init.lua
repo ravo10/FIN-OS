@@ -27,16 +27,20 @@ AddCSLuaFile( "reload.lua" )
 -- ///////////////////////////////////////////////////////////////////////////////
 
 CreateConVar(
+
     "finos_rhodensistyfluidvalue",
     1.29,
     FCVAR_PROTECTED,
     "Mass density (rho) that will be applied to Fin OS fin."
+
 )
 CreateConVar(
+
     "finos_maxscalarvalue",
     69,
     FCVAR_PROTECTED,
     "Maximum scalar value a player can apply to a Fin OS fin."
+
 )
 
 FIN_OS_NOTIFY_GENERIC = 0
@@ -54,15 +58,21 @@ SWEP.AutoSwitchFrom = false
 function SWEP:Initialize() end
 
 function SWEP:OnDrop()
-    
+
     self:SetTempFlapRelatedEntity0( nil )
     self:SetTempFlapRelatedEntity1( nil )
+    self:SetDisableTool( false )
+
+    timer.Remove("fin_os__EntAreaPointCrossingLinesTIMER")
 
 end
 function SWEP:Holster( Weapon )
-    
+
     self:SetTempFlapRelatedEntity0( nil )
     self:SetTempFlapRelatedEntity1( nil )
+    self:SetDisableTool( false )
+
+    timer.Remove("fin_os__EntAreaPointCrossingLinesTIMER")
 
     return true
 
@@ -171,9 +181,9 @@ function SWEP:GetTrace()
     local OWNER = self:GetOwner()
 
     local tr = util.GetPlayerTrace( OWNER )
-	tr.mask = bit.bor( CONTENTS_SOLID, CONTENTS_MOVEABLE, CONTENTS_MONSTER, CONTENTS_WINDOW, CONTENTS_DEBRIS, CONTENTS_GRATE, CONTENTS_AUX ) -- https://wiki.facepunch.com/gmod/Enums/CONTENTS
+    tr.mask = bit.bor( CONTENTS_SOLID, CONTENTS_MOVEABLE, CONTENTS_MONSTER, CONTENTS_WINDOW, CONTENTS_DEBRIS, CONTENTS_GRATE, CONTENTS_AUX ) -- https://wiki.facepunch.com/gmod/Enums/CONTENTS
     local trace = util.TraceLine( tr )
-    
+
     return trace
 
 end
@@ -206,32 +216,173 @@ end
 
 function SWEP:SetAreaPointsForFin( tr )
 
-    local ENT = tr.Entity
+    local Entity = tr.Entity
+    local OWNER = self:GetOwner()
+    local WEAPON = OWNER:GetActiveWeapon()
 
     -- Get old area points if any
-    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints", "ID7" )
+    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID7" )
     local amountOfPointsUsed = #AREAPOINTSTABLE
 
     -- If you got 26, then cancel
-    if amountOfPointsUsed == 26 then self:AlertPlayer( "Max points is 26!" ) return true else
+    if amountOfPointsUsed == 26 then self:AlertPlayer( "Max points is 26!" ) return false else
 
         -- Get some data
-        local localHitPos = ENT:WorldToLocal( tr.HitPos )
+        local localHitPos = Entity:WorldToLocal( tr.HitPos )
+
+         -- Check if any vector lines are crossing eachother before continuing
+        local areAnyVectorLinesCrossing = self:CheckIfTheLastTwoVectorLinesAreCrossing( Entity, AREAPOINTSTABLE, localHitPos )
 
         -- Store some data
         table.insert( AREAPOINTSTABLE, localHitPos )
-        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPoints", AREAPOINTSTABLE, nil,"ID8" )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPoints", AREAPOINTSTABLE, nil,"ID8" )
         amountOfPointsUsed = #AREAPOINTSTABLE
 
-        local alfabethTable = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
-        self:AlertPlayer( "Added local area point: " .. alfabethTable[ amountOfPointsUsed ] .. "(" .. math.Round( localHitPos[1] ) .. ", " .. math.Round( localHitPos[2] ) .. ", " .. math.Round( localHitPos[3] ) .. ")" )
+       if not areAnyVectorLinesCrossing then
 
-        if amountOfPointsUsed == 1 then
-            
-            self:AlertPlayer( "*Add two or more points.." )
-            FINOS_SendNotification( "Add two or more points..", FIN_OS_NOTIFY_GENERIC, OWNER, 1.3 )
-        
+            local alfabethTable = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
+            self:AlertPlayer( "Added local area point: " .. alfabethTable[ amountOfPointsUsed ] .. "(" .. math.Round( localHitPos[1] ) .. ", " .. math.Round( localHitPos[2] ) .. ", " .. math.Round( localHitPos[3] ) .. ")" )
+
+            if amountOfPointsUsed == 1 then
+                
+                self:AlertPlayer( "*Add two or more points.." )
+                FINOS_SendNotification( "Add two or more points..", FIN_OS_NOTIFY_GENERIC, OWNER, 1.3 )
+
+            end
+
+       end
+
+       return areAnyVectorLinesCrossing
+
+    end
+
+end
+function SWEP:CheckIfTheLastTwoVectorLinesAreCrossing( Entity, areaPointsTableLocalPoints, lastVectorLocalPoint )
+
+    local OWNER = self:GetOwner()
+    local WEAPON = OWNER:GetActiveWeapon()
+
+    local lengthOfAreaPointsTable = #areaPointsTableLocalPoints
+
+    if lengthOfAreaPointsTable >= 1 then
+
+        local localLocationOfLastPointInOldTable = areaPointsTableLocalPoints[ lengthOfAreaPointsTable ]
+
+        -- Create a parameter of current
+        local localParameterOfNewVectorLineBetweenLastTwoPoints
+
+        if lengthOfAreaPointsTable == 1 then
+
+            localParameterOfNewVectorLineBetweenLastTwoPoints = FINOS_GiveVectorLineParameters(
+
+                localLocationOfLastPointInOldTable,
+                FINOS_CreateVectorFromTwoPoints( localLocationOfLastPointInOldTable, lastVectorLocalPoint )
+
+            )
+            -- Line is not crossing, so store it for later use/check
+            FINOS_InsertDataToEntFinTable( Entity, "fin_os__EntAreaVectorLinesParameter", {
+    
+                equation1 = { x = localParameterOfNewVectorLineBetweenLastTwoPoints.equation1[ "x" ], a = localParameterOfNewVectorLineBetweenLastTwoPoints.equation1[ "a" ] },
+                equation2 = { y = localParameterOfNewVectorLineBetweenLastTwoPoints.equation2[ "y" ], b = localParameterOfNewVectorLineBetweenLastTwoPoints.equation2[ "b" ] },
+                equation3 = { z = localParameterOfNewVectorLineBetweenLastTwoPoints.equation3[ "z" ], c = localParameterOfNewVectorLineBetweenLastTwoPoints.equation3[ "c" ] }
+
+            }, nil, "ID0" )
+
         end
+
+        localParameterOfNewVectorLineBetweenLastTwoPoints = FINOS_GiveVectorLineParameters(
+
+            lastVectorLocalPoint,
+            FINOS_CreateVectorFromTwoPoints( localLocationOfLastPointInOldTable, lastVectorLocalPoint )
+
+        )
+
+        local allOldParametersOfVectorLinesFromCurrentTargetEnt = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaVectorLinesParameter", "ID1" )
+        local lengthOfAllOldParametersOfVectorLinesFromCurrentTargetEnt = #allOldParametersOfVectorLinesFromCurrentTargetEnt
+        
+        if lengthOfAllOldParametersOfVectorLinesFromCurrentTargetEnt >= 1 then
+
+            local calculationResults = {}
+
+            -- Loop through all prev. (old) parameters of lines, and check if the current line will cross any of the older vector lines ( not allowed )
+            if lengthOfAllOldParametersOfVectorLinesFromCurrentTargetEnt > 2 then
+
+                for _, parametersOfAnOldLine in pairs( allOldParametersOfVectorLinesFromCurrentTargetEnt ) do
+
+                    -- Gather all possible outcomes to check later
+                    table.insert(
+
+                        calculationResults,
+                        FINOS_CalculateIfVectorLineIsCrossingOtherVectorLine( parametersOfAnOldLine, localParameterOfNewVectorLineBetweenLastTwoPoints, areaPointsTableLocalPoints )
+
+                    )
+
+                end
+
+            end
+
+            -- Add crossings, if it should be e.g. displayed visually
+            local calculationCrossingLinesValidResults = { }
+
+            for _, crossingLinesResult in pairs( calculationResults ) do
+
+                if crossingLinesResult[ "crossingLines" ] then
+
+                    table.insert( calculationCrossingLinesValidResults, crossingLinesResult )
+
+                end
+
+            end
+
+            -- Line is not crossing an old one, so store it for later use/check
+            if #calculationCrossingLinesValidResults == 0 then
+
+                FINOS_InsertDataToEntFinTable( Entity, "fin_os__EntAreaVectorLinesParameter", {
+
+                    equation1 = { x = localParameterOfNewVectorLineBetweenLastTwoPoints.equation1[ "x" ], a = localParameterOfNewVectorLineBetweenLastTwoPoints.equation1[ "a" ] },
+                    equation2 = { y = localParameterOfNewVectorLineBetweenLastTwoPoints.equation2[ "y" ], b = localParameterOfNewVectorLineBetweenLastTwoPoints.equation2[ "b" ] },
+                    equation3 = { z = localParameterOfNewVectorLineBetweenLastTwoPoints.equation3[ "z" ], c = localParameterOfNewVectorLineBetweenLastTwoPoints.equation3[ "c" ] }
+
+                }, nil, "ID1" )
+
+            else
+
+                -- Store for display CLIENT
+                FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPointCrossingLines", { calculationResults = calculationCrossingLinesValidResults }, nil, "ID1" )
+
+                self:SetDisableTool( true )
+
+                -- Tell the player
+                FINOS_SendNotification( "Unvalid next point!", FIN_OS_NOTIFY_ERROR, OWNER, 3.7 )
+                WEAPON:EmitSound( "fin_os/error.wav", 130, 100 )
+
+                timer.Create( "fin_os__EntAreaPointCrossingLinesTIMER", 0.7, 1, function()
+
+                    -- Remove crossing line
+                    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID18" )
+                    
+                    FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPoints", nil )
+                    table.remove( AREAPOINTSTABLE, #AREAPOINTSTABLE )
+
+                    -- Save
+                    FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPoints", AREAPOINTSTABLE, nil, "ID9" )
+                    FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPointCrossingLines", nil )
+
+                    -- Tell player how much we got
+                    self:CalculateAreaForFinBasedOnAreaPoints( Entity, OWNER )
+
+                    timer.Simple( 0.2, function () self:SetDisableTool( false ) end )
+
+                end )
+
+                return true
+
+            end
+
+            return false
+
+        end
+
     end
 
 end
@@ -270,10 +421,12 @@ function SWEP:CalculateAreaForFinBasedOnAreaPoints( ent, owner )
 
         -- Overwrite and store
         FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaVectors", {
+
             vCPLFin_Area_Units = math.Round( combinedLength_Area_Units, 2 ),
             vCPLFin_Area_Foot = math.Round( combinedLength_Area_Foot, 2 ),
             vCPLFin_Area_Meter = math.Round( combinedLength_Area_Meter, 2 ),
             pointsUsed = amountOfPointsUsed
+
         }, nil, "ID9" )
 
         local currentEntAngle = ent:GetAngles()
@@ -299,6 +452,7 @@ end
 
 function SWEP:AlertPlayer( string )
 
+    -- Disabled ( don't need it )
     self:GetOwner():PrintMessage( HUD_PRINTTALK, string )
 
 end
@@ -359,6 +513,101 @@ function FINOS_VectorCrossProduct( vectorA, vectorB, round )
     local vectorLength = vectorProduct:Length()
 
     if round then return math.Round( vectorLength ) else return vectorLength end
+
+end
+function FINOS_GiveVectorLineParameters( vectorPoint, vector )
+
+    return {
+
+        equation1 = { x = vectorPoint.x, a = vector.x },
+        equation2 = { y = vectorPoint.y, b = vector.y },
+        equation3 = { z = vectorPoint.z, c = vector.z }
+
+    }
+
+end
+function FINOS_CalculateIfVectorLineIsCrossingOtherVectorLine( oldLineParameters, newLineParameters, areaPointsTableLocalPoints )
+
+    local newPointXYZ = ( Vector( newLineParameters.equation1[ "x" ], newLineParameters.equation2[ "y" ], newLineParameters.equation3[ "z" ] ) )
+    local oldPointXYZ = ( Vector( oldLineParameters.equation1[ "x" ], oldLineParameters.equation2[ "y" ], oldLineParameters.equation3[ "z" ] ) )
+
+    local newVectorABC = ( Vector( newLineParameters.equation1[ "a" ], newLineParameters.equation2[ "b" ], newLineParameters.equation3[ "c" ] ) )
+    local oldVectorABC = ( Vector( oldLineParameters.equation1[ "a" ], oldLineParameters.equation2[ "b" ], oldLineParameters.equation3[ "c" ] ) )
+
+    -- POINT
+    local x1 = newPointXYZ.x
+    local x2 = oldPointXYZ.x
+    local y1 = newPointXYZ.y
+    local y2 = oldPointXYZ.y
+
+    -- VECTOR
+    local a1 = newVectorABC.x
+    local a2 = oldVectorABC.x
+    local b1 = newVectorABC.y
+    local b2 = oldVectorABC.y
+
+    -- Calculate based on own formula
+    local t = ( ( y2 + ( b2 * x1 - b2 * x2 ) / a2 - y1 ) / ( ( -a1 * b2 ) / a2 + b1 ) )
+    local s = ( ( x1 - x2 + a1 * t ) / a2 )
+
+    local equation1LHS = ( newLineParameters.equation1[ "x" ] + newLineParameters.equation1[ "a" ] * t )
+    local equation1RHS = ( oldLineParameters.equation1[ "x" ] + oldLineParameters.equation1[ "a" ] * s )
+    local equation2LHS = ( newLineParameters.equation2[ "y" ] + newLineParameters.equation2[ "b" ] * t )
+    local equation2RHS = ( oldLineParameters.equation2[ "y" ] + oldLineParameters.equation2[ "b" ] * s )
+    local equation3LHS = ( newLineParameters.equation3[ "z" ] + newLineParameters.equation3[ "c" ] * t )
+    local equation3RHS = ( oldLineParameters.equation3[ "z" ] + oldLineParameters.equation3[ "c" ] * s )
+
+    local LHSLocalCrossingPoint = Vector( equation1LHS, equation2LHS, equation3LHS )
+    local RHSLocalCrossingPoint = Vector( equation1RHS, equation2RHS, equation3RHS )
+
+    local decimals = 0
+
+    local equation1LHSRounded = math.Round( equation1LHS, decimals )
+    local equation1RHSRounded = math.Round( equation1RHS, decimals )
+    local equation2LHSRounded = math.Round( equation2LHS, decimals )
+    local equation2RHSRounded = math.Round( equation2RHS, decimals )
+    local equation3LHSRounded = math.Round( equation3LHS, decimals )
+    local equation3RHSRounded = math.Round( equation3RHS, decimals )
+
+    local LHSLocalCrossingPointRounded = Vector( equation1LHSRounded, equation2LHSRounded, equation3LHSRounded )
+    local RHSLocalCrossingPointRounded = Vector( equation1RHSRounded, equation2RHSRounded, equation3RHSRounded )
+
+    local crossPointCoordinatesLHS = ( Vector( equation1LHS, equation2LHS, equation3LHS ) )
+    local crossPointCoordinatesRHS = ( Vector( equation1RHS, equation2RHS, equation3RHS ) )
+
+    local isAPointFromToolGun = false
+
+    -- Important, or else the values will be to accurate
+    local tRounded = math.Round( t, 3 )
+    local sRounded = math.Round( s, 3 )
+
+    for k, v in pairs( areaPointsTableLocalPoints ) do
+
+        -- Very important to not get invalid cross points.. Dirty checking here...
+        if (
+
+            v == crossPointCoordinatesLHS or
+            v == crossPointCoordinatesRHS or
+            math.Round( math.abs( tRounded ) ) > 1 or
+            math.Round( math.abs( sRounded ) ) > 1 or
+            sRounded >= 0 or
+            tRounded >= 0 or
+            tRounded <= -1 or
+            sRounded <= -1
+
+        ) then isAPointFromToolGun = true else --[[ print( tRounded, sRounded ) ]] end
+
+    end
+
+    return {
+
+        t = t,
+        s = s,
+        LHSLocalCrossingPoint = LHSLocalCrossingPoint,
+        RHSLocalCrossingPoint = RHSLocalCrossingPoint,
+        crossingLines = ( LHSLocalCrossingPointRounded == RHSLocalCrossingPointRounded and not isAPointFromToolGun ) -- BUG somewher: Won't work correctly - T-Equation is OK ( tested )
+
+     }
 
 end
 

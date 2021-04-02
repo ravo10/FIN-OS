@@ -2,9 +2,13 @@
 
 **[FIN OS Tool on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261)**
 
+### You can find the stand alone tool under: **Weapons => ravo Norway => Fin OS Tool**
+
+**Made from scratch, and based on the modern lift equation: https://wright.nasa.gov/airplane/lifteq.html**
+
 ### How to use:
 * You can find the stand alone tool under: ***Weapons => ravo Norway => Fin OS Tool***
-* **Left-Click to apply** 3 - 26 local origo originated vector points on prop, to get started. This will calculate the area using the length of the cross products
+* **Left-Click to apply** 3 - 26 local origo originated vector points on prop, to get started. This will calculate the area using .5 the length of the cross product for all the triangles
 * **( IN_USE + Left-Click ) to add** a flap. Connect by clicking on the fin/flap and on the flap/fin
 * **Right-Click to add** fin to *tracked fin table*
 * **Reload to remove** fin/flap from prop
@@ -48,16 +52,18 @@
 - Updated GUI colors to match new logo
 ### 0.0.42 ( 30.03.21 )
 - Fixed a few minor bugs
+### 0.0.5 ( 02.04.21 )
+- Math and logic for checking if a to be new vector line crosses any old vector lines ( not allowed )
 
 ## @todo
-- BUG: Check if any vector lines (two points) are intersecting for area, and do not allow that
+- BUG: Adjust logic for checking if a vector crosses when prop does not not spawn in a perfect position like many flat PHX's
 
 ## Licence
 This addon is created by [ravo (Norway)](https://steamcommunity.com/sharedfiles/filedetails/?id=1647345157) or the uploader of this current viewed [SWEP](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261) on Steam Workshop.
 All of the custom code created by the creator/uploader (this site), that is given for FIN OS Tool, is supplied under the: [CC BY-NC-SA 4.0 Licence](https://creativecommons.org/licenses/by-nc-sa/4.0/deed.en) If not specified otherwise.
 
 ### Copyright content
-* The tool model is a modded version of the original Garry's Mod toolgun.
+* The tool model is a modded version of the original Garry's Mod toolgun
 
 ## Author
 *ravo Norway*

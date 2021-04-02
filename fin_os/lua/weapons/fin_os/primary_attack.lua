@@ -1,6 +1,6 @@
 function SWEP:PrimaryAttack()
     local tr = self:GetTrace()
-    if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() ) then return false end
+    if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() or self:GetDisableTool() ) then return false end
 
     local ENT = tr.Entity
     local OWNER = self:GetOwner()
@@ -10,8 +10,8 @@ function SWEP:PrimaryAttack()
         if not OWNER:KeyDown( IN_USE ) then
 
             -- Set vector points on wing for area calculations
-            self:SetAreaPointsForFin( tr )
-            self:CalculateAreaForFinBasedOnAreaPoints( ENT, OWNER )
+            local areAnyVectorLinesCrossing = self:SetAreaPointsForFin( tr )
+            if not areAnyVectorLinesCrossing then self:CalculateAreaForFinBasedOnAreaPoints( ENT, OWNER ) end
 
             local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints", "ID11" )
             if #AREAPOINTSTABLE > 2 then FINOS_AddFinWingEntity( ENT, OWNER ) end
@@ -103,4 +103,5 @@ function SWEP:PrimaryAttack()
     end
 
     return false
+
 end

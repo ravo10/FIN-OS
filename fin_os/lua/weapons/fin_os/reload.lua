@@ -25,8 +25,12 @@ function SWEP:Reload()
     local WEAPON = OWNER:GetActiveWeapon()
     local ENT = tr.Entity
 
-    -- Remove flap
+    -- Remove fin or flap
     if ENT and ENT:IsValid() then
+
+        -- Remove disabling tool gun
+        self:SetDisableTool( false )
+        timer.Remove("fin_os__EntAreaPointCrossingLinesTIMER")
 
         if ENT:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
@@ -50,7 +54,7 @@ function SWEP:Reload()
         local prevFinOSBrain = ENT:GetNWEntity( "fin_os_brain" )
         if prevFinOSBrain and prevFinOSBrain:IsValid() then foundOneFinWing = true prevFinOSBrain:Remove() end
         
-        if not foundOneFinWing and ENT[ "FinOS_data" ][ "fin_os__EntAreaPoints" ] then
+        if not foundOneFinWing and ENT[ "FinOS_data" ]  and ENT[ "FinOS_data" ][ "fin_os__EntAreaPoints" ] then
 
             -- Reset area points
             FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPoints", nil )
@@ -68,6 +72,8 @@ function SWEP:Reload()
         -- Empty all data
         FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPoints", nil )
         FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaVectors", nil )
+        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaVectorLinesParameter", nil )
+        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPointCrossingLines", nil )
         FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAngleProperties", nil )
         FINOS_AddDataToEntFinTable( ENT, "fin_os__EntPhysicsProperties", nil )
 
