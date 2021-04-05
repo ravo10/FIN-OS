@@ -19,6 +19,10 @@ function ENT:Initialize()
 	self:AddEFlags( EFL_DONTBLOCKLOS )
 	
 	self:DrawShadow( false)
+
+	-- Create the flap data structure ( same as the fin )
+	self:SetNWBool( "fin_os_is_a_fin_flap", true )
+
 end
 
 function ENT:GravGunPickupAllowed(pl) return false end
@@ -100,6 +104,7 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			-- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
 			-- ///////////////////////////////////////////////////////////////////////////////
 
+			local ANGLEPROPERTIESFROMFLAPTABLE
 			local ATTACKANGLESFROMFLAPTABLE
 			local CURRENT_CL_PERCEPTION_START_ANGLE_DEGREES_FLAP
 
@@ -108,8 +113,11 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			local CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP = 0
 			local CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP = 0
 
-			local ENT_FLAP = entFinParentProp:GetNWEntity( "fin_os_flapEntity" ) if ENT_FLAP:IsValid() then
+			local ENT_FLAP = entFinParentProp:GetNWEntity( "fin_os_flapEntity" )
+			
+			if ENT_FLAP and ENT_FLAP:IsValid() then
 
+				ANGLEPROPERTIESFROMFLAPTABLE = FINOS_GetDataToEntFinTable( ENT_FLAP, "fin_os__EntAngleProperties", "ID2" )
 				ATTACKANGLESFROMFLAPTABLE = FINOS_CalculateAttackAnglesDegreesFor_CL( ENT_FLAP )
 
 				if ATTACKANGLESFROMFLAPTABLE then
@@ -117,12 +125,9 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 					-- Calculate Lift Force [ FLAP ]
 					CALULATETFORCESFLAPTABLE = FINOS_CalculateLiftForce(
 
-						ENT_FLAP,
-						ATTACKANGLESFROMFLAPTABLE,
+						ENT_FLAP, ATTACKANGLESFROMFLAPTABLE,
 						GetConVar( "finos_rhodensistyfluidvalue" ):GetInt(),
-						CURRENT_VELOCITY_MeterSecond,
-						( CURRENT_AREA_METER / 4 ),
-						SCALAR
+						CURRENT_VELOCITY_MeterSecond, ( CURRENT_AREA_METER / 4 ), SCALAR
 					
 					)
 
@@ -172,10 +177,11 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			}, nil, "ID0", true )
 
 			-- Store some data for flap ( can be viewed by player ) [ FLAP ]
-			if ENT_FLAP:IsValid() and ATTACKANGLESFROMFLAPTABLE then
+			if ENT_FLAP and ENT_FLAP:IsValid() and ANGLEPROPERTIESFROMFLAPTABLE and ATTACKANGLESFROMFLAPTABLE then
 
 				FINOS_AddDataToEntFinTable( ENT_FLAP, "fin_os__EntAngleProperties", {
 
+					BaseAngle				= ANGLEPROPERTIESFROMFLAPTABLE[ "BaseAngle" ],
 					AttackAngle_Pitch		= ATTACKANGLESFROMFLAPTABLE[ "CURRENT_ATTACK_ANGLE" ],
 					AttackAngle_RollCosinus = ATTACKANGLESFROMFLAPTABLE[ "CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS" ]
 	

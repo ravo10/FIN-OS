@@ -37,8 +37,8 @@ function SWEP:Reload()
 
             RemoveFlapFromFin( Entity )
 
-            FINOS_AlertPlayer( "[FLAP] **Removed attachment to a fin", OWNER )
-            FINOS_SendNotification( "[FLAP] Removed att. to a FIN OS fin", FIN_OS_NOTIFY_CLEANUP, OWNER )
+            FINOS_AlertPlayer( "[FLAP] **Removed flap attachment to a fin", OWNER )
+            FINOS_SendNotification( "[FLAP] Removed flap att. to a FIN OS fin", FIN_OS_NOTIFY_CLEANUP, OWNER, 3.5 )
 
             -- Play sound
             WEAPON:EmitSound( "garrysmod/save_load1.wav", 30, 300 )
@@ -97,8 +97,8 @@ function SWEP:Reload()
         if Entity:GetNWEntity( "fin_os_flapEntity" ):IsValid() then RemoveFlapFromFin( Entity:GetNWEntity( "fin_os_flapEntity" ) ) end
 
         -- Done Cleaning up..
-        FINOS_AlertPlayer( "**Removed all Fin OS settings from prop", OWNER )
-        FINOS_SendNotification( "Removed Fin OS fin", FIN_OS_NOTIFY_CLEANUP, OWNER, 3.5 )
+        FINOS_AlertPlayer( "**Removed all FIN OS settings from prop", OWNER )
+        FINOS_SendNotification( "Removed FIN OS fin", FIN_OS_NOTIFY_CLEANUP, OWNER, 3.5 )
 
         -- Play sound
         WEAPON:EmitSound( "garrysmod/save_load2.wav", 70, 200 )

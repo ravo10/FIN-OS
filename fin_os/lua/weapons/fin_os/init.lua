@@ -34,7 +34,7 @@ CreateConVar(
     "finos_rhodensistyfluidvalue",
     1.29,
     FCVAR_PROTECTED,
-    "Mass density ( rho ) that will be applied to Fin OS fin."
+    "Mass density ( rho ) that will be applied to FIN OS fin."
 
 )
 CreateConVar(
@@ -42,7 +42,7 @@ CreateConVar(
     "finos_maxscalarvalue",
     69,
     FCVAR_PROTECTED,
-    "Maximum scalar value a player can apply to a Fin OS fin."
+    "Maximum scalar value a player can apply to a FIN OS fin."
 
 )
 CreateConVar(
@@ -136,7 +136,7 @@ if SERVER then
         ) then
 
             -- Apply the angle ( important )
-            Entity:SetAngles( Data[ "ANGLEPROPERTIESTABLE" ][ "BaseAngle" ] )
+            Entity:SetLocalAngles( Data[ "ANGLEPROPERTIESTABLE" ][ "BaseAngle" ] )
 
             -- Write duplicator settings for entity
             -- **Don't need to add AREAPOINTSTABLE, AREAVECTORSTABLE, AREAVECTORSLINESPARAMETERTABLE and AREAPOINTCROSSINGLINESTABLE, since
@@ -177,13 +177,13 @@ if SERVER then
 
                         if GetConVar( "finos_disablestrictmode" ):GetInt() == 1 then
 
-                            FINOS_AlertPlayer( "All points from Fin OS fin duplication was validated ( strict mode disabled )", Player )
-                            FINOS_SendNotification( "All points from Fin OS duplication was validated ( strict mode disabled )", FIN_OS_NOTIFY_GENERIC, Player, 3.4 )
+                            FINOS_AlertPlayer( "All points from FIN OS fin duplication was validated ( strict mode disabled )", Player )
+                            FINOS_SendNotification( "All points from FIN OS duplication was validated ( strict mode disabled )", FIN_OS_NOTIFY_GENERIC, Player, 3.4 )
 
                         else
 
-                            FINOS_AlertPlayer( "All points from Fin OS fin duplication was validated ( strict mode ) ", Player )
-                            FINOS_SendNotification( "All points from Fin OS duplication was validated ( strict mode ) ", FIN_OS_NOTIFY_GENERIC, Player, 3.4 )
+                            FINOS_AlertPlayer( "All points from FIN OS fin duplication was validated ( strict mode ) ", Player )
+                            FINOS_SendNotification( "All points from FIN OS duplication was validated ( strict mode ) ", FIN_OS_NOTIFY_GENERIC, Player, 3.4 )
 
                         end
 
@@ -192,8 +192,8 @@ if SERVER then
                         -- Tell the player how big the current "prev" area is
                         FINOS_CalculateAreaForFinBasedOnAreaPoints( Entity, Player, false, true )
 
-                        FINOS_AlertPlayer( "One or more point from Fin OS fin was not validated ( crossings ) from duplication (this server has strict settings on). Maybe you need to redefine your area", Player )
-                        FINOS_SendNotification( "One or more point was not validated from Fin OS duplication", FIN_OS_NOTIFY_ERROR, Player, 4 )
+                        FINOS_AlertPlayer( "One or more point from FIN OS fin was not validated ( crossings ) from duplication (this server has strict settings on). Maybe you need to redefine your area", Player )
+                        FINOS_SendNotification( "One or more point was not validated from FIN OS duplication", FIN_OS_NOTIFY_ERROR, Player, 4 )
 
                     end
 
@@ -209,8 +209,8 @@ if SERVER then
         else
 
             -- Error, tell the Plater that the fin was not added ( he has to add it again )
-            errorMessage1 = "**An error occured while adding the Fin OS fin (maybe old version applied before). You'll have to re-apply a new fin manually again"
-            errorMessage2 = "An error occured while adding the Fin OS fin. You'll have to apply a new fin"
+            errorMessage1 = "**An error occured while adding the FIN OS fin (maybe old version applied before). You'll have to re-apply a new fin manually again"
+            errorMessage2 = "An error occured while adding the FIN OS fin. You'll have to apply a new fin"
 
         end
 
@@ -361,7 +361,7 @@ function FINOS_CheckIfTheLastTwoVectorLinesAreCrossing( Entity, areaPointsTable,
 
                     -- Tell the player
                     FINOS_SendNotification( "Unvalid next-point (crossing)!", FIN_OS_NOTIFY_ERROR, OWNER, 3.7 )
-                    self:EmitSound( "fin_os/error.wav", 130, 100 )
+                    self:EmitSound( "fin_os/error.wav", 41, 100 )
 
                 end
 
@@ -466,7 +466,7 @@ function FINOS_SetAreaPointsForFin( tr, player, self )
     
         elseif entityHitNormalRounded ~= acceptedAngleAndHitNormal[ "firstPointSet_HitNormal" ] then
     
-            FINOS_AlertPlayer( "*You can only apply new points on one side of the Fin OS fin!", OWNER )
+            FINOS_AlertPlayer( "*You can only apply new points on one side of the FIN OS fin!", OWNER )
             FINOS_SendNotification( "You can only apply new points on one side of the fin!", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
     
         end
@@ -622,7 +622,7 @@ function FINOS_CheckIfLastPointIsWithingAreaOfTriangle( ent, player, areaPointsT
 
                 -- Tell the player
                 FINOS_SendNotification( "Unvalid next-point (overlap)!", FIN_OS_NOTIFY_ERROR, player, 3.7 )
-                self:EmitSound( "fin_os/error.wav", 130, 100 )
+                self:EmitSound( "fin_os/error.wav", 41, 100 )
 
                 timer.Create( "fin_os__EntAreaPointCrossingLinesTIMER000" .. self:EntIndex(), 0.2, 1, function()
 
@@ -894,7 +894,7 @@ function FINOS_CalculateAreaForFinBasedOnAreaPoints( ent, owner, shouldNotSave, 
                 FINOS_AlertPlayer( "Current area between vectors: " .. FINOS_GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ] .. " m²", owner )
                 FINOS_AlertPlayer( "Current base angle (P, Y, R) set to: (" .. math.Round( currentEntAngle[ 1 ] ) .. ", " .. math.Round( currentEntAngle[ 2 ] ) .. ", " .. math.Round( currentEntAngle[ 3 ] ) .. ")", owner )
 
-                FINOS_AlertPlayer( "Fin OS fin configured! Current area is " .. FINOS_GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ] .. " m²", owner )
+                FINOS_AlertPlayer( "FIN OS fin configured! Current area is " .. FINOS_GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ] .. " m²", owner )
                 FINOS_SendNotification( "Fin configured! Area is " .. FINOS_GetAreaForFin( ent )[ "vCPLFin_Area_Meter" ] .. " m²", FIN_OS_NOTIFY_HINT, owner, 3.5 )
 
             end
@@ -941,7 +941,7 @@ end
 -- For calculating attack angles on air
 function FINOS_CalculateAttackAnglesDegreesFor_CL( ent )
 
-    if not ent:IsValid() then return nil end
+    if not ent and not ent:IsValid() then return nil end
 
 	local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( ent, "fin_os__EntAngleProperties", "ID10" )
 
@@ -951,14 +951,22 @@ function FINOS_CalculateAttackAnglesDegreesFor_CL( ent )
     if not ANGLEPROPERTIESTABLE[ "BaseAngle" ] then return nil end
 
 	local CURRENT_MAIN_ANGLES_OF_ATTACK = Angle(
+
 		( CURRENT_ENT_ANGLES[ 1 ] - ENT_MAIN_BASE_ANGLES[ 1 ] ),
 		( CURRENT_ENT_ANGLES[ 2 ] - ENT_MAIN_BASE_ANGLES[ 2 ] ),
 		( CURRENT_ENT_ANGLES[ 3 ] - ENT_MAIN_BASE_ANGLES[ 3 ] )
+
 	)
 
-	local CURRENT_ANGLE_OF_ATTACK_PITCH = CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ]
 	local CURRENT_ANGLE_OF_ATTACK_ROLL = CURRENT_MAIN_ANGLES_OF_ATTACK[ 3 ]
 	local CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = math.Round( math.cos( math.rad(CURRENT_ANGLE_OF_ATTACK_ROLL) ) )
+
+    -- For props that can go above 90 degrees
+    if CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ] > 90 then
+
+        CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ] = ( ( 180 - CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ] ) - 90 )
+
+    end local CURRENT_ANGLE_OF_ATTACK_PITCH = CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ]
 
 	-- Being used
 	local CURRENT_ATTACK_ANGLE = ( CURRENT_ANGLE_OF_ATTACK_PITCH * CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS )
@@ -1106,7 +1114,7 @@ function FINOS_AddFinWingEntity( ent, owner )
     local entFin = ents.Create( "fin_os_brain" )
 
     entFin:SetPos( ent:LocalToWorld( ent:OBBCenter() ) ) -- Endre til midten av arealet vektor ??
-    entFin:SetAngles( ent:LocalToWorldAngles( ent:GetAngles() ) )
+    entFin:SetAngles( ent:GetAngles() )
 
     entFin:SetName( "fin_os_finWingBrain" )
     entFin:SetParent( ent )

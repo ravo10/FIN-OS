@@ -67,9 +67,15 @@
 - Adjusted color to tool menu text
 - Added so Player can't set points within the area so it e.g. doubles up ( strict mode )
 - Adjusted the color pallette for the control panels
+### 0.0.61 ( 05.04.21 )
+- Small bug with duplication ( angles of entity on paste made to local angles instead )
+- Adjusted the error sound to lower volume
+- Fixed bug with angle of fin
 
 ## @todo
 - Make a custom world model for the fin tool SWEP
+- Should a fin be added to the undo list ( ? )
+- Small issue with props having different angles ( over 90 degrees ) - compensated for that
 - Fix bones, so it will the Players custom player model
 - Make the strict mode better ( ? )
 - More testing to make be assured it is stable, for a stable release

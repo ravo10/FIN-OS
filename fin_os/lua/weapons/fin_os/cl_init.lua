@@ -19,7 +19,7 @@ SWEP.InfoIcon = surface.GetTextureID( "gui/info" )
 SWEP.LastMessage = 0
 
 language.Add( "Undone_fin_os", "Undone a FIN OS" )
-language.Add( "Cleanup_fin_os", "Fin OS" )
+language.Add( "Cleanup_fin_os", "FIN OS" )
 language.Add( "Cleaned_fin_os", "Cleaned up all FIN OS'" )
 language.Add( "sboxlimit_fin_os", "You've reached the FIN OS limit!" )
 

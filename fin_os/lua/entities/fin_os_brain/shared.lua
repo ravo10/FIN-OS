@@ -5,7 +5,7 @@ ENT.Category        = "ravo Norway"
 ENT.Spawnable		= false
 ENT.AdminSpawnable	= false
 
-ENT.PrintName		= "Fin OS Wing"
+ENT.PrintName		= "FIN OS Wing"
 ENT.Author			= "ravo (Norway)"
 ENT.Contact			= "N/A"
 ENT.Purpose			= "To make the Wing/Fin think and get physical with the air plane."

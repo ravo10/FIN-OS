@@ -99,7 +99,7 @@ function SWEP:PrimaryAttack()
 
                     BaseAngle = currentEntAngle
 
-                }, nil, "ID11" )
+                }, nil, "ID11", true )
 
                 ENT_FIN:SetNWEntity( "fin_os_flapEntity", ENT_FLAP )
 

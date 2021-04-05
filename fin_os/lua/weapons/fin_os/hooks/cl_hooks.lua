@@ -7,7 +7,8 @@
 -- Check if fin is correct way up
 local function WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle )
 
-    if ( rollCosinusFraction ~= 0 or math.abs( pitchAttackAngle ) ~= 0 ) and math.abs( pitchAttackAngle ) < 90 then return "Yes" else return "No" end
+    -- if ( rollCosinusFraction ~= 0 or math.abs( pitchAttackAngle ) ~= 0 ) and math.abs( pitchAttackAngle ) < 90 then return "Yes" else return "No" end
+    if rollCosinusFraction > -1 and math.abs( pitchAttackAngle ) < 90 then return "Yes" else return "No" end
 
 end
 
