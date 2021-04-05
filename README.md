@@ -1,3 +1,4 @@
+![alt text](https://repository-images.githubusercontent.com/352235482/93b92c80-90ec-11eb-9efb-7abad5ca096a)
 # FIN OS Tool (FIN OPEN SOURCE)
 
 **[FIN OS Tool on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261)**
@@ -22,10 +23,13 @@
 * Supports clean up
 * Supports SBOX max
 * Some ConVar settings
+* Advanced validity checking of area ( when ```finos_disablestrictmode == 0``` )
 
 ### Console Variables
-* **finos_rhodensistyfluidvalue** ( def. = 1.29 ) [ FCVAR_PROTECTED ] - Mass density (rho) that will be applied to Fin OS fin.
-* **finos_maxscalarvalue** ( def. = 69 ) [ FCVAR_PROTECTED ] - Maximum scalar value a player can apply to a Fin OS fin.
+* ```**finos_rhodensistyfluidvalue** ( def. = 1.29 ) [ FCVAR_PROTECTED ]``` - Mass density ( rho ) that will be applied to Fin OS fin.
+* ```**finos_maxscalarvalue** ( def. = 69 ) [ FCVAR_PROTECTED ]``` - Maximum scalar value a player can apply to a Fin OS fin.
+* ```**finos_disablestrictmode** ( def. = 0 ) [ FCVAR_PROTECTED ]``` - Disables checking for angle of prop and crossing vector lines, if you just want to be joking around ( other servers might not accept the duplicate tho ).
+* ```**finos_disableprintchatmessages** ( def. = 1 ) [ FCVAR_PROTECTED ]``` - Disables printing messages in chat ( only legacy ).
 
 ## BETA
 ### 0.0.1 ( 28.03.21 )
@@ -53,10 +57,22 @@
 ### 0.0.42 ( 30.03.21 )
 - Fixed a few minor bugs
 ### 0.0.5 ( 02.04.21 )
-- Math and logic for checking if a to be new vector line crosses any old vector lines ( not allowed )
+- Added math and logic for checking if a to be new vector line crosses any old vector lines ( not allowed )
+### 0.0.6 ( 05.04.21 )
+- Finished up adding a program for checking if a new vector line crosses any old ones ( not allowed )
+- Added so after the first point is set, the prop always need to be in that local angle and have the same local normal vector from toolgun hit afterwards ( to not mess up the area ). In simple words: prop needs to have it's original angles for adding points and it can only be on one side ( strict mode )
+- Fixed some duplication issues/bugs
+- Added so it will check if the duplication has some security issues, like crossing lines ( strict mode )
+- Added ConVar "finos_disablestrictmode" ( important to use on servers that want no cheating with area definition )
+- Adjusted color to tool menu text
+- Added so Player can't set points within the area so it e.g. doubles up ( strict mode )
+- Adjusted the color pallette for the control panels
 
 ## @todo
-- BUG: Adjust logic for checking if a vector crosses when prop does not not spawn in a perfect position like many flat PHX's
+- Make a custom world model for the fin tool SWEP
+- Fix bones, so it will the Players custom player model
+- Make the strict mode better ( ? )
+- More testing to make be assured it is stable, for a stable release
 
 ## Licence
 This addon is created by [ravo (Norway)](https://steamcommunity.com/sharedfiles/filedetails/?id=1647345157) or the uploader of this current viewed [SWEP](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261) on Steam Workshop.

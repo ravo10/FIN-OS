@@ -86,29 +86,38 @@ function SWEP:SetupDataTables()
 end
 
 -- Data manipulation
-local function WriteFinOSTableData( ent, entTableID, _table, insertTableDontMerge ) -- This is getting called SERVER and CLIENT side
+-- This is getting called SERVER and CLIENT side
+local function WriteFinOSTableData( ent, entTableID, _table, insertTableDontMerge, overwriteCurrentTable )
 
     -- Maybe reset the table
     if not _table then
 
-        if ent[ "FinOS_data" ] then ent[ "FinOS_data" ][ entTableID ] = nil end
-
-        return
+        if ent[ "FinOS_data" ] then ent[ "FinOS_data" ][ entTableID ] = nil end return
 
     end
 
     if not ent[ "FinOS_data" ] then ent[ "FinOS_data" ] = {} end
-        if not ent[ "FinOS_data" ][ entTableID ] then ent[ "FinOS_data" ][ entTableID ] = {} end
 
-    if insertTableDontMerge then
+    if not ent[ "FinOS_data" ][ entTableID ] then ent[ "FinOS_data" ][ entTableID ] = {} end
 
-        -- Insert table into table on SERVER side
-        table.insert( ent[ "FinOS_data" ][ entTableID ], _table )
+    -- Overwrite
+    if overwriteCurrentTable then
+
+        ent[ "FinOS_data" ][ entTableID ] = _table
 
     else
 
-        -- Overwrite on SERVER and CLIENT side
-        table.Merge( ent[ "FinOS_data" ][ entTableID ], _table )
+        if insertTableDontMerge then
+
+            -- Insert table into table on SERVER side
+            table.insert( ent[ "FinOS_data" ][ entTableID ], _table )
+
+        else
+
+            -- Overwrite values on SERVER and CLIENT side
+            for k, v in pairs( _table ) do ent[ "FinOS_data" ][ entTableID ][ k ] = v end
+
+        end
 
     end
 
@@ -125,20 +134,53 @@ if CLIENT then
         local entTableID = data[ "entTableID" ]
         local _table = data[ "_table" ]
         local insertTableDontMerge = data[ "insertTableDontMerge" ]
+        local overwriteCurrentTable = data[ "overwriteCurrentTable" ]
 
-        WriteFinOSTableData( ent, entTableID, _table, insertTableDontMerge )
+        WriteFinOSTableData( ent, entTableID, _table, insertTableDontMerge, overwriteCurrentTable )
 
     end )
 
 end
 
-function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player, ID )
+function FINOS_GetACopyOfATable( _table )
+
+    local newTable = {}
+
+    for k, v in pairs( _table ) do
+
+        newTable[ k ] = v
+
+    end
+
+    return newTable
+
+end
+function FINOS_RemoveOneIndexFromTable( _table )
+
+    local newTable = {}
+
+    for k, v in pairs( _table ) do
+
+        -- Don't include the last one
+        if k < #_table then
+
+            newTable[ k ] = v
+
+        end
+
+    end
+
+    return newTable
+
+end
+
+function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player, ID, overwriteCurrentTable )
 
     if SERVER then
 
-        if not ent or not ent:IsValid() then return print( "FINOS_AddDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID.. ". ID: " .. ID ) end
+        if not ent and not ent:IsValid() then print( "FINOS_AddDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID .. ". ID: " .. ID ) return end
 
-        WriteFinOSTableData( ent, entTableID, _table )
+        WriteFinOSTableData( ent, entTableID, _table, false, overwriteCurrentTable )
 
         net.Start("FINOS_UpdateEntityTableValue_CLIENT")
 
@@ -147,7 +189,8 @@ function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player, ID )
                 ent = ent,
                 entTableID = entTableID,
                 _table = _table,
-                insertTableDontMerge = false
+                insertTableDontMerge = false,
+                overwriteCurrentTable = overwriteCurrentTable or false
 
             })
 
@@ -156,11 +199,11 @@ function FINOS_AddDataToEntFinTable( ent, entTableID, _table, Player, ID )
     end
 
 end
-function FINOS_InsertDataToEntFinTable( ent, entTableID, _table, Player, ID )
+function FINOS_InsertDataToEntFinTable( ent, entTableID, _table, Player, ID, overwriteCurrentTable )
 
     if SERVER then
 
-        if not ent or not ent:IsValid() then return print( "FINOS_InsertDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID.. ". ID: " .. ID ) end
+        if not ent and not ent:IsValid() then print( "FINOS_InsertDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID.. ". ID: " .. ID ) return end
 
         WriteFinOSTableData( ent, entTableID, _table, true )
 
@@ -171,7 +214,8 @@ function FINOS_InsertDataToEntFinTable( ent, entTableID, _table, Player, ID )
                 ent = ent,
                 entTableID = entTableID,
                 _table = _table,
-                insertTableDontMerge = true
+                insertTableDontMerge = true,
+                overwriteCurrentTable = overwriteCurrentTable or false
 
             })
 
@@ -182,7 +226,7 @@ function FINOS_InsertDataToEntFinTable( ent, entTableID, _table, Player, ID )
 end
 function FINOS_GetDataToEntFinTable( ent, entTableID, ID )
 
-    if not ent or not ent:IsValid() then return print( "FINOS_GetDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID.. ". ID: " .. ID ) end
+    if not ent and not ent:IsValid() then print( "FINOS_GetDataToEntFinTable: 'ent' is not valid. entTableID: " .. entTableID.. ". ID: " .. ID ) return end
 
     if ent[ "FinOS_data" ] and ent[ "FinOS_data" ][ entTableID ] then
 
