@@ -36,18 +36,6 @@ net.Receive( "FINOS_SendLegacyNotification_CLIENT", function()
 
 end )
 
-net.Receive( "FINOS_UpdateEntityScalarLiftForceValue_CLIENT", function()
-
-    local data = net.ReadTable()
-
-    local ent = data[ "ent" ]
-    local FinOS_LiftForceScalarValue = data[ "FinOS_LiftForceScalarValue" ]
-
-    -- Overwrite value
-    ent[ "FinOS_LiftForceScalarValue" ] = FinOS_LiftForceScalarValue
-
-end )
-
 function SWEP:DrawHUD()
 
     return true

@@ -1,40 +1,70 @@
 function SWEP:PrimaryAttack()
+
     local tr = self:GetTrace()
     if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() or self:GetDisableTool() ) then return false end
 
-    local ENT = tr.Entity
+    local Entity = tr.Entity
     local OWNER = self:GetOwner()
 
-    if ENT and ENT:IsValid() and not ENT:GetNWBool( "fin_os_is_a_fin_flap" ) then
+    if Entity and Entity:IsValid() and not Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
         if not OWNER:KeyDown( IN_USE ) then
 
+            -- Importtant
             -- Set vector points on wing for area calculations
-            local areAnyVectorLinesCrossing = self:SetAreaPointsForFin( tr )
-            if not areAnyVectorLinesCrossing then self:CalculateAreaForFinBasedOnAreaPoints( ENT, OWNER ) end
+            local areAnyVectorLinesCrossingOrAngleHitNormalNotOK = FINOS_SetAreaPointsForFin( tr, OWNER, self )
+            local IsWitinArea = false
 
-            local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints", "ID11" )
-            if #AREAPOINTSTABLE > 2 then FINOS_AddFinWingEntity( ENT, OWNER ) end
+            local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID11" )
+
+            if not areAnyVectorLinesCrossingOrAngleHitNormalNotOK then
+
+                -- Check if trace hitPoint is witin area
+                IsWitinArea = FINOS_CheckIfLastPointIsWithingAreaOfTriangle( Entity, OWNER, AREAPOINTSTABLE, self )
+
+                if IsWitinArea then FINOS_CalculateAreaForFinBasedOnAreaPoints( Entity, OWNER, false, false ) end
+
+            end
+
+            if IsWitinArea and not areAnyVectorLinesCrossingOrAngleHitNormalNotOK then
+
+                amountOfPointsUsed = #AREAPOINTSTABLE
+
+                local localHitPos = Entity:WorldToLocal( tr.HitPos )
+
+                local alfabethTable = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
+                FINOS_AlertPlayer( "Added local area point: " .. alfabethTable[ amountOfPointsUsed ] .. "(" .. math.Round( localHitPos[ 1 ] ) .. ", " .. math.Round( localHitPos[ 2 ] ) .. ", " .. math.Round( localHitPos[ 3 ] ) .. ")", OWNER )
+
+                if amountOfPointsUsed == 1 then
+                    
+                    FINOS_AlertPlayer( "*Add two or more points..", OWNER )
+                    FINOS_SendNotification( "Add two or more points..", FIN_OS_NOTIFY_GENERIC, OWNER, 1.3 )
+
+                end
+
+            end
+
+            if IsWitinArea and #AREAPOINTSTABLE > 2 then FINOS_AddFinWingEntity( Entity, OWNER ) end
 
             -- Effect
             self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
-            return true
+            return false
 
         else
 
             -- Connect a flap to fin
             if not self:GetTempFlapRelatedEntity0() or not self:GetTempFlapRelatedEntity0():IsValid() then
 
-                self:SetTempFlapRelatedEntity0( ENT )
+                self:SetTempFlapRelatedEntity0( Entity )
 
-                self:AlertPlayer( "[FLAP] Selected entity #1" )
+                FINOS_AlertPlayer( "[FLAP] Selected entity #1", OWNER )
                 FINOS_SendNotification( "[FLAP] Selected 1 of 2 entities", FIN_OS_NOTIFY_GENERIC, OWNER )
 
-            elseif ENT ~= self:GetTempFlapRelatedEntity0() then
+            elseif Entity ~= self:GetTempFlapRelatedEntity0() then
 
-                self:SetTempFlapRelatedEntity1( ENT )
+                self:SetTempFlapRelatedEntity1( Entity )
 
-                self:AlertPlayer( "[FLAP] Selected entity #2" )
+                FINOS_AlertPlayer( "[FLAP] Selected entity #2", OWNER )
 
             else
 
@@ -42,7 +72,7 @@ function SWEP:PrimaryAttack()
                 self:SetTempFlapRelatedEntity0( nil )
                 self:SetTempFlapRelatedEntity1( nil )
 
-                self:AlertPlayer( "[FLAP] Same entity! Try again" )
+                FINOS_AlertPlayer( "[FLAP] Same entity! Try again", OWNER )
                 FINOS_SendNotification( "[FLAP] Same entity! Try again", FIN_OS_NOTIFY_ERROR, OWNER )
 
             end
@@ -73,8 +103,8 @@ function SWEP:PrimaryAttack()
 
                 ENT_FIN:SetNWEntity( "fin_os_flapEntity", ENT_FLAP )
 
-                self:AlertPlayer( "[FLAP] Current base angle (P, Y, R) set to: (" .. math.Round( currentEntAngle[ 1 ] ) .. ", " .. math.Round( currentEntAngle[ 2 ] ) .. ", " .. math.Round( currentEntAngle[ 3 ] ) .. ")" )
-                self:AlertPlayer( "[FLAP] Flap added to fin! Area is preset to ¼ of the fin area" )
+                FINOS_AlertPlayer( "[FLAP] Current base angle (P, Y, R) set to: (" .. math.Round( currentEntAngle[ 1 ] ) .. ", " .. math.Round( currentEntAngle[ 2 ] ) .. ", " .. math.Round( currentEntAngle[ 3 ] ) .. ")", OWNER )
+                FINOS_AlertPlayer( "[FLAP] Flap added to fin! Area is preset to ¼ of the fin area", OWNER )
                 FINOS_SendNotification( "[FLAP] Flap added to fin! Area is ¼ of the fin", FIN_OS_NOTIFY_GENERIC, OWNER, 3.5 )
 
                 self:SetTempFlapRelatedEntity0( nil )
@@ -85,7 +115,7 @@ function SWEP:PrimaryAttack()
                 self:SetTempFlapRelatedEntity0( nil )
                 self:SetTempFlapRelatedEntity1( nil )
 
-                self:AlertPlayer( "[FLAP] Select a Fin and Flap! Try again" )
+                FINOS_AlertPlayer( "[FLAP] Select a Fin and Flap! Try again", OWNER )
                 FINOS_SendNotification( "[FLAP] Select a Fin and Flap! Try again", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
 
             end
@@ -95,9 +125,9 @@ function SWEP:PrimaryAttack()
 
         end
 
-    elseif OWNER:KeyDown( IN_USE ) and ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_is_a_fin_flap" ) then
+    elseif OWNER:KeyDown( IN_USE ) and Entity and Entity:IsValid() and Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
-        self:AlertPlayer( "[FLAP] This entity is already a flap! Reload to remove from fin" )
+        FINOS_AlertPlayer( "[FLAP] This entity is already a flap! Reload to remove from fin", OWNER )
         FINOS_SendNotification( "[FLAP] This entity is already a flap!", FIN_OS_NOTIFY_ERROR, OWNER )
 
     end

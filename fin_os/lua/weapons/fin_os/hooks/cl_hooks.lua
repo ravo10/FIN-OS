@@ -34,81 +34,15 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
         local tr = Player:GetEyeTrace()
 
-        local ENT = tr.Entity
-
-        if Player:GetActiveWeapon():GetClass() == "fin_os" then
-
-            local backgroundPosX = ( ScrW() - 300 - 20 )
-            local backgroundPosY = 60 + 37
-
-            local textColor = Color( 255, 255, 255, 255 )
-
-            draw.RoundedBox( 8,
-                backgroundPosX,
-                ( backgroundPosY - 60 + 17 ),
-                300,
-                48,
-                Color( 90, 90, 90, 110 ) -- light Gray
-
-            )
-            draw.DrawText(
-
-                "FIN OS",
-                "Trebuchet24",
-                ( backgroundPosX + 60 ),
-                ( backgroundPosY - 45 + 14 ),
-                textColor,
-                TEXT_ALIGN_LEFT
-
-            )
-            draw.DrawText(
-
-                "(ravo Norway)",
-                "HudSelectionText",
-                ( backgroundPosX + 150 ),
-                ( backgroundPosY - 45 + 13 ),
-                textColor,
-                TEXT_ALIGN_LEFT
-
-            )
-
-            draw.RoundedBox( 2,
-                backgroundPosX,
-                backgroundPosY,
-                300,
-                156,
-                Color( 18, 220, 255, 200 ) -- lightBlue
-
-            )
-
-            draw.DrawText(
-
-                [[
-                    Left-Click to apply fin
-                    IN_USE + Left-Click to add a flap
-                    
-                    Right-Click to track physics
-                    Reload to remove fin from prop
-                    
-                    IN_USE + SCROLL to scale lift force
-                ]],
-                "GModToolHelp",
-                ( backgroundPosX - 97 + 20 ),
-                ( backgroundPosY + 20 ),
-                Color( 255, 255, 255, 255 ),
-                TEXT_ALIGN_LEFT
-
-            )
-
-        end
+        local Entity = tr.Entity
 
         -- If player looks at a fin, maybe show the current settings/values
-        if ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_active" ) then
+        if Entity and Entity:IsValid() and Entity:GetNWBool( "fin_os_active" ) then
 
-            local FinSettingsTable = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAngleProperties", "ID12" )
+            local FinSettingsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAngleProperties", "ID12" )
             local pitchAttackAngle_FLAP = 0
             local FlapSettingsTable
-            local ENT_FLAP = ENT:GetNWEntity( "fin_os_flapEntity" )
+            local ENT_FLAP = Entity:GetNWEntity( "fin_os_flapEntity" )
 
             if ENT_FLAP:IsValid() then
 
@@ -121,7 +55,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
             end
 
-            local FinPhysicsPropertiesTable = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntPhysicsProperties", "ID13" )
+            local FinPhysicsPropertiesTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", "ID13" )
 
             if
                 ( FinSettingsTable[ "AttackAngle_Pitch" ] and FinSettingsTable[ "AttackAngle_RollCosinus" ] ) and
@@ -135,6 +69,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 local speed = math.Round( FinPhysicsPropertiesTable[ "VelocityKmH" ] )
                 local force_lift = math.Round( FinPhysicsPropertiesTable[ "LiftForceNewtonsModified_beingUsed" ] )
                 local area_meter_squared = math.Round( FinPhysicsPropertiesTable[ "AreaMeterSquared" ], 2 )
+                local liftForceScalarValue = FinPhysicsPropertiesTable[ "FinOS_LiftForceScalarValue" ]
 
                 local backgroundPosX = ( ScrW() - 300 - 20 )
                 local backgroundPosY = 250
@@ -147,9 +82,24 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     backgroundPosY,
                     300,
                     200,
-                    Color( 50, 50, 50, 240 ) -- lightBlack Gray
+                    Color( 78, 99, 105, 129 )
 
                 )
+
+                if Player:GetActiveWeapon():GetClass() ~= "fin_os" then
+
+                    draw.DrawText(
+
+                        "FIN OS",
+                        "Trebuchet24",
+                        ( backgroundPosX + 232 ),
+                        ( backgroundPosY - 13 ),
+                        Color( 247, 245, 162, 220 ),
+                        TEXT_ALIGN_LEFT
+
+                    )
+
+                end
 
                 draw.DrawText(
 
@@ -216,7 +166,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 
                 draw.DrawText(
 
-                    "Scalar ( Force[LIFT] ): " .. ENT[ "FinOS_LiftForceScalarValue" ],
+                    "Scalar ( Force[LIFT] ): " .. liftForceScalarValue,
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 * 2 ),
@@ -227,13 +177,11 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
             end
 
-        elseif ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_is_a_fin_flap" ) then
+        elseif Entity and Entity:IsValid() and Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
-            local FinSettingsTable = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAngleProperties", "ID14" )
+            local FinSettingsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAngleProperties", "ID14" )
 
-            if
-                ( FinSettingsTable[ "AttackAngle_Pitch" ] and FinSettingsTable[ "AttackAngle_RollCosinus" ] )
-            then
+            if FinSettingsTable[ "AttackAngle_Pitch" ] and FinSettingsTable[ "AttackAngle_RollCosinus" ] then
 
                 -- Show important values to user on screen
                 local pitchAttackAngle = math.Round( FinSettingsTable[ "AttackAngle_Pitch" ] )
@@ -245,11 +193,12 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 local textColor = Color( 255, 255, 255, 255 )
 
                 draw.RoundedBox( 8,
+
                     backgroundPosX,
                     backgroundPosY,
                     300,
                     110,
-                    Color( 50, 50, 50, 230 ) -- lightBlack Gray
+                    Color( 78, 99, 105, 129 )
 
                 )
 
@@ -289,6 +238,73 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
         end
 
+        if Player:GetActiveWeapon():GetClass() == "fin_os" then
+
+            local backgroundPosX = ( ScrW() - 300 - 20 )
+            local backgroundPosY = 60 + 37
+
+            local textColor = Color( 255, 255, 255, 255 )
+
+            draw.RoundedBox( 4,
+
+                backgroundPosX,
+                backgroundPosY - 8,
+                300,
+                156,
+                Color( 247, 245, 162, 220 )
+
+            )
+            draw.DrawText(
+
+                [[
+                    Left-Click to apply fin
+                    "E" + Left-Click to add a flap
+                    
+                    Right-Click to track physics
+                    Reload to remove fin from prop
+                    
+                    "E" + Scroll to scale lift force
+                ]],
+                "GModToolHelp",
+                ( backgroundPosX - 97 + 20 ),
+                ( backgroundPosY + 20 ),
+                Color( 70, 73, 72),
+                TEXT_ALIGN_LEFT
+
+            )
+
+            draw.RoundedBox( 8,
+
+                backgroundPosX,
+                ( backgroundPosY - 60 + 17 ),
+                300,
+                48,
+                Color( 11, 27, 247, 230)
+
+            )
+            draw.DrawText(
+
+                "FIN OS",
+                "Trebuchet24",
+                ( backgroundPosX + 60 ),
+                ( backgroundPosY - 45 + 14 ),
+                textColor,
+                TEXT_ALIGN_LEFT
+
+            )
+            draw.DrawText(
+
+                "(ravo Norway)",
+                "HudSelectionText",
+                ( backgroundPosX + 150 ),
+                ( backgroundPosY - 45 + 13 ),
+                textColor,
+                TEXT_ALIGN_LEFT
+
+            )
+
+        end
+
         -- Display tracked fin entity
         local PHYSICSPROPERTIESSTABLE = FINOS_GetDataToEntFinTable( Player, "fin_os__EntBeingTracked", "ID15" )
 
@@ -308,15 +324,16 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             local area_meter_squared = math.Round( PHYSICSPROPERTIESSTABLE[ "AreaMeterSquared" ], 2 )
 
             draw.RoundedBox( 8,
+
                 backgroundPosX,
                 backgroundPosY,
                 width,
                 77,
-                Color( 255, 238, 170, 203 ) -- lightYellow
+                Color( 170, 238, 255, 203 )
 
             )
 
-            local textColor = Color( 0, 0, 0, 220 )
+            local textColor = Color( 0, 0, 0, 225)
 
             draw.DrawText(
 
@@ -381,16 +398,13 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
         local tr = Player:GetEyeTrace()
 
-        local ENT = tr.Entity
+        local Entity = tr.Entity
 
-        if ENT and ENT:IsValid() and Player and Player:IsValid() and Player:GetActiveWeapon():IsValid() and Player:GetActiveWeapon():GetClass() == "fin_os" then
+        if Entity and Entity:IsValid() and Player and Player:IsValid() and Player:GetActiveWeapon():IsValid() and Player:GetActiveWeapon():GetClass() == "fin_os" then
 
-            local FinAreaPointsTable = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPoints", "ID16" )
-            local FinAreaPointCrossingLines = FINOS_GetDataToEntFinTable( ENT, "fin_os__EntAreaPointCrossingLines", "ID3" )
+            local FinAreaPointsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID16" )
 
-            local extraZ = Vector( 0, 0, 0.6 )
-
-            if ENT:GetNWBool( "fin_os_active" ) then
+            if Entity:GetNWBool( "fin_os_active" ) then
 
                 -- Draw the area visually on entity
                 for k, _ in pairs( FinAreaPointsTable ) do
@@ -400,10 +414,10 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
                         render.SetMaterial( Material( "models/props_combine/stasisshield_sheet" ) )
                         render.DrawQuad(
 
-                            ENT:LocalToWorld( FinAreaPointsTable[ 1 ] + extraZ ),
-                            ENT:LocalToWorld( FinAreaPointsTable[ k - 1 ] + extraZ ),
-                            ENT:LocalToWorld( FinAreaPointsTable[ k ] + extraZ ),
-                            ENT:LocalToWorld( FinAreaPointsTable[ 1 ] + extraZ ),
+                            Entity:LocalToWorld( FinAreaPointsTable[ 1 ] ),
+                            Entity:LocalToWorld( FinAreaPointsTable[ k - 1 ] ),
+                            Entity:LocalToWorld( FinAreaPointsTable[ k ] ),
+                            Entity:LocalToWorld( FinAreaPointsTable[ 1 ] ),
                             Color( 255, 255, 255 )
                         )
 
@@ -421,14 +435,14 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
                 if point1 and point2 then
 
-                    point1 = ENT:LocalToWorld( v + extraZ )
-                    point2 = ENT:LocalToWorld( FinAreaPointsTable[ k + 1 ] + extraZ )
+                    point1 = Entity:LocalToWorld( v )
+                    point2 = Entity:LocalToWorld( FinAreaPointsTable[ k + 1 ] )
 
                     render.DrawLine( point1, point2, Color( 170, 255, 170 ), true )
 
                     if ( k + 1 ) == #FinAreaPointsTable then
 
-                        render.DrawLine( point2, ENT:LocalToWorld( FinAreaPointsTable[ 1 ] + extraZ ), Color( 255, 94, 94 ), true )
+                        render.DrawLine( point2, Entity:LocalToWorld( FinAreaPointsTable[ 1 ] ), Color( 99, 240, 250 ), true )
 
                     end
 
@@ -436,19 +450,22 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
             end
 
+            -- Just important if we have strict mode ON
+            local FinAreaPointCrossingLines = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPointCrossingLines", "ID3" )
+
             -- Draw a sprit where the line is crossing other lines
-            if FinAreaPointCrossingLines[ "calculationResults" ] then
+            if GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and FinAreaPointCrossingLines[ "calculationResults" ] then
 
                 for k, v in pairs( FinAreaPointCrossingLines[ "calculationResults" ] ) do
 
                     if v[ "LHSLocalCrossingPoint" ] then
 
-                        local point1 = ENT:LocalToWorld( v[ "LHSLocalCrossingPoint" ] + extraZ )
+                        local point1 = Entity:LocalToWorld( v[ "LHSLocalCrossingPoint" ] )
 
                         if point1 then
 
                             render.SetMaterial( Material( "sprites/light_ignorez" ) )
-                            render.DrawSprite( point1, 20, 20, Color( 255, 255, 255))
+                            render.DrawSprite( point1, 20, 20, Color( 255, 255, 255 ) )
 
                         end
 
@@ -456,6 +473,73 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
                 end
 
+            end
+
+        end
+
+        -- Just important if we have strict mode ON
+        -- Tell the Player visually whats going on
+        if GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and Entity and Entity:IsValid() and Player and Player:IsValid() and Player:GetActiveWeapon():IsValid() and ( Player:GetActiveWeapon():GetClass() == "weapon_physgun" or Player:GetActiveWeapon():GetClass() == "fin_os" ) then
+
+            local FinAcceptedAngleAndHitNormal = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal", "ID19" )
+
+            local FinAcceptedAnglesRounded = FinAcceptedAngleAndHitNormal[ "firstPointSet_Angles" ]
+
+            local decimals = 0
+            local FinCurrentAngles = Entity:GetAngles()
+            local FinCurrentAnglesRounded = Angle( math.Round( FinCurrentAngles[ 1 ], decimals ), math.Round( FinCurrentAngles[ 2 ], decimals ), math.Round( FinCurrentAngles[ 3 ], decimals ) )
+            
+            local isEAndShiftUsedToRotate = math.Round( math.abs( ( FinCurrentAngles[ 1 ] + FinCurrentAngles[ 2 ] + FinCurrentAngles[ 3 ] ) ), 1 ) % 1 <= 0
+
+            local entMaxes = Entity:OBBMaxs()
+
+            -- Only for physgun
+            if Entity:GetNWBool( "fin_os_active" ) and Player:GetActiveWeapon():GetClass() == "weapon_physgun" then
+
+                local colorSignal1 = Color( 200, 170, 255 )
+                local colorSignal2 = Color( 200, 170, 255 )
+                local colorSignal3 = Color( 200, 170, 255 )
+                if FinAcceptedAnglesRounded[ 1 ] - FinCurrentAnglesRounded[ 1 ] <= 0.15 and FinCurrentAnglesRounded[ 1 ] == FinAcceptedAnglesRounded[ 1 ] then colorSignal1 = Color( 170, 255, 170 ) end
+                if FinAcceptedAnglesRounded[ 2 ] - FinCurrentAnglesRounded[ 2 ] <= 0.15 and FinCurrentAnglesRounded[ 2 ] == FinAcceptedAnglesRounded[ 2 ] then colorSignal2 = Color( 170, 255, 170 ) end
+                if FinAcceptedAnglesRounded[ 3 ] - FinCurrentAnglesRounded[ 3 ] <= 0.15 and FinCurrentAnglesRounded[ 3 ] == FinAcceptedAnglesRounded[ 3 ] then colorSignal3 = Color( 170, 255, 170 ) end
+
+                render.SetMaterial( Material( "sprites/light_ignorez" ) )
+
+                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z ) ), 50, 50, colorSignal1 )
+                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z - 10 ) ), 50, 50, colorSignal2 )
+                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z - 10 * 2 ) ), 50, 50, colorSignal3 )
+
+            end
+
+            if Player and Player:IsValid() and Player:GetActiveWeapon():GetClass() == "fin_os" and not isEAndShiftUsedToRotate then
+
+                local text = [[Rotate me with "Shift" (｀_´)ゞ]]
+                local font = "GModWorldtip"
+                
+                surface.SetFont( font )
+                local tW, tH = surface.GetTextSize( text )
+
+                local trace = LocalPlayer():GetEyeTrace()
+
+                -- Get the game's camera angles
+                local angle = EyeAngles()
+                angle = ( angle + Angle( -180 - angle[ 1 ], 90, -90 - angle[ 1 ] ) )
+
+                local scale = 0.3
+                local padding = 5
+
+                local pos = Entity:LocalToWorld( entMaxes - Vector( 0, 0, entMaxes.z + tH / 2 - tH / 2 - 7 + padding ) )
+                pos = Player:LocalToWorld( Player:WorldToLocal( pos ) + Vector( -10 * scale, ( tW / 2 - tW / 2 ) * scale, ( -tH ) * scale ) )
+
+                cam.Start3D2D( pos, angle, scale )
+
+                    surface.SetDrawColor( 0, 0, 0, 175)
+                    surface.DrawRect( -tW / 2 - padding, -padding, tW + padding * 2, tH + padding * 2 )
+
+                    draw.SimpleText( text, font, -tW / 2, 0, Color( 255, 135, 79) )
+
+                cam.End3D2D()
+                
             end
 
         end

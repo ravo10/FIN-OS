@@ -23,20 +23,21 @@ function SWEP:Reload()
 
     local OWNER = self:GetOwner()
     local WEAPON = OWNER:GetActiveWeapon()
-    local ENT = tr.Entity
+    local Entity = tr.Entity
 
     -- Remove fin or flap
-    if ENT and ENT:IsValid() then
+    if Entity and Entity:IsValid() then
 
         -- Remove disabling tool gun
         self:SetDisableTool( false )
-        timer.Remove("fin_os__EntAreaPointCrossingLinesTIMER")
+        timer.Remove( "fin_os__EntAreaPointCrossingLinesTIMER000" .. self:EntIndex() )
+        timer.Remove( "fin_os__EntAreaPointCrossingLinesTIMER001" .. self:EntIndex() )
 
-        if ENT:GetNWBool( "fin_os_is_a_fin_flap" ) then
+        if Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
-            RemoveFlapFromFin( ENT )
+            RemoveFlapFromFin( Entity )
 
-            self:AlertPlayer( "[FLAP] **Removed attachment to a fin" )
+            FINOS_AlertPlayer( "[FLAP] **Removed attachment to a fin", OWNER )
             FINOS_SendNotification( "[FLAP] Removed att. to a FIN OS fin", FIN_OS_NOTIFY_CLEANUP, OWNER )
 
             -- Play sound
@@ -51,14 +52,14 @@ function SWEP:Reload()
         local foundOneFinWing = false
 
         -- Remove fin_os_brain
-        local prevFinOSBrain = ENT:GetNWEntity( "fin_os_brain" )
+        local prevFinOSBrain = Entity:GetNWEntity( "fin_os_brain" )
         if prevFinOSBrain and prevFinOSBrain:IsValid() then foundOneFinWing = true prevFinOSBrain:Remove() end
         
-        if not foundOneFinWing and ENT[ "FinOS_data" ]  and ENT[ "FinOS_data" ][ "fin_os__EntAreaPoints" ] then
+        if not foundOneFinWing and Entity[ "FinOS_data" ] and Entity[ "FinOS_data" ][ "fin_os__EntAreaPoints" ] then
 
             -- Reset area points
-            FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPoints", nil )
-            self:AlertPlayer( "**Removed one or two area points from fin" )
+            FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPoints", nil )
+            FINOS_AlertPlayer( "**Removed one or two area points from fin", OWNER )
             FINOS_SendNotification( "Removed FIN OS area points", FIN_OS_NOTIFY_UNDO, OWNER )
 
             -- Play sound
@@ -70,17 +71,18 @@ function SWEP:Reload()
 
         -- CLEAN UP
         -- Empty all data
-        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPoints", nil )
-        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaVectors", nil )
-        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaVectorLinesParameter", nil )
-        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAreaPointCrossingLines", nil )
-        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntAngleProperties", nil )
-        FINOS_AddDataToEntFinTable( ENT, "fin_os__EntPhysicsProperties", nil )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPoints", nil )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaVectors", nil )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaVectorLinesParameter", nil )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaPointCrossingLines", nil )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal", nil )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAngleProperties", nil )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", nil )
 
-        ENT:SetNWBool( "fin_os_active", false )
+        Entity:SetNWBool( "fin_os_active", false )
 
         -- If the Player has this fin as the tracked one
-        if OWNER:GetNWEntity( "fin_os_tracked_fin" ):IsValid() and OWNER:GetNWEntity( "fin_os_tracked_fin" ) == ENT then
+        if OWNER:GetNWEntity( "fin_os_tracked_fin" ):IsValid() and OWNER:GetNWEntity( "fin_os_tracked_fin" ) == Entity then
 
             OWNER:SetNWEntity( "fin_os_tracked_fin", nil )
 
@@ -89,14 +91,14 @@ function SWEP:Reload()
         end
 
         -- Remove saved duplicator settings for entity
-        duplicator.ClearEntityModifier( ENT, "FinOS" )
+        duplicator.ClearEntityModifier( Entity, "FinOS" )
 
         -- Remove fin
-        if ENT:GetNWEntity( "fin_os_flapEntity" ):IsValid() then RemoveFlapFromFin( ENT:GetNWEntity( "fin_os_flapEntity" ) ) end
+        if Entity:GetNWEntity( "fin_os_flapEntity" ):IsValid() then RemoveFlapFromFin( Entity:GetNWEntity( "fin_os_flapEntity" ) ) end
 
         -- Done Cleaning up..
-        self:AlertPlayer( "**Removed all Fin OS settings from prop" )
-        FINOS_SendNotification( "Removed Fin OS", FIN_OS_NOTIFY_CLEANUP, OWNER, 3.5 )
+        FINOS_AlertPlayer( "**Removed all Fin OS settings from prop", OWNER )
+        FINOS_SendNotification( "Removed Fin OS fin", FIN_OS_NOTIFY_CLEANUP, OWNER, 3.5 )
 
         -- Play sound
         WEAPON:EmitSound( "garrysmod/save_load2.wav", 70, 200 )

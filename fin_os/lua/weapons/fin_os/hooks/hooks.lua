@@ -13,12 +13,11 @@ hook.Add( "SetupMove", "fin_os:SetupMove", function( pl, mv, cmd )
         -- Change the slowdown effect up or down
         if mouseWheelScrollDelta ~= 0 then
 
-            local ENT = pl:GetEyeTrace().Entity
+            local Entity = pl:GetEyeTrace().Entity
 
-            if ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_active" ) and pl:GetActiveWeapon():GetClass() == "fin_os" then
+            if Entity and Entity:IsValid() and Entity:GetNWBool( "fin_os_active" ) and pl:GetActiveWeapon():GetClass() == "fin_os" then
 
-                local scalarValue = ENT[ "FinOS_LiftForceScalarValue" ]
-                if not scalarValue then ENT[ "FinOS_LiftForceScalarValue" ] = FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE end
+                local scalarValue = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", "ID31" )[ "FinOS_LiftForceScalarValue" ]
 
                 local newScalarValue = scalarValue
 
@@ -26,19 +25,10 @@ hook.Add( "SetupMove", "fin_os:SetupMove", function( pl, mv, cmd )
                 if newScalarValue < 0.5 then newScalarValue = 0.5 elseif newScalarValue > GetConVar( "finos_maxscalarvalue" ):GetInt() then newScalarValue = GetConVar( "finos_maxscalarvalue" ):GetInt() end
 
                 -- Store new scalar value
-                ENT[ "FinOS_LiftForceScalarValue" ] = newScalarValue
+                FINOS_AddDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", { FinOS_LiftForceScalarValue = newScalarValue }, nil, "ID30" )
 
-                -- Send to client
-                net.Start( "FINOS_UpdateEntityScalarLiftForceValue_CLIENT" )
-
-                    net.WriteTable({
-
-                        ent = ENT,
-                        FinOS_LiftForceScalarValue = newScalarValue
-
-                    })
-                
-                net.Broadcast()
+                -- Store for duplication
+                FINOS_WriteDuplicatorDataForEntity( Entity )
 
             end
 

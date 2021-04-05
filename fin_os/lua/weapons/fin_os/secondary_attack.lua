@@ -4,13 +4,13 @@ function SWEP:SecondaryAttack()
     if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() or self:GetDisableTool() ) then return false end
 
     local OWNER = self:GetOwner()
-    local ENT = tr.Entity
+    local Entity = tr.Entity
 
-    if ENT and ENT:IsValid() and ENT:GetNWBool( "fin_os_active" ) then
+    if Entity and Entity:IsValid() and Entity:GetNWBool( "fin_os_active" ) then
 
         -- Maybe add the current viewed entity fin wing to the panel, or hide panel
         local currentTrackedWingEntity = OWNER:GetNWEntity( "fin_os_tracked_fin" )
-        local nextFinWingEntity = ENT
+        local nextFinWingEntity = Entity
 
         if currentTrackedWingEntity:IsValid() and nextFinWingEntity:IsValid() and currentTrackedWingEntity == nextFinWingEntity then
 

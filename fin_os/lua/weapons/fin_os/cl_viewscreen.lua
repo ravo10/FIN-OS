@@ -5,11 +5,7 @@ local txBackground = surface.GetTextureID( "models/weapons/v_fin_os_toolgun/scre
 -- GetRenderTarget returns the texture if it exists, or creates it if it doesn't
 local RTTexture = GetRenderTarget( "GModToolgunScreen", 256, 256 )
 
-surface.CreateFont( "GModToolScreen", {
-	font	= "Helvetica",
-	size	= 60,
-	weight	= 900
-} )
+surface.CreateFont( "GModToolScreen", { font = "Helvetica", size = 60, weight = 900 } )
 
 local function DrawScrollingText( text, y, texwide )
 
@@ -26,7 +22,7 @@ local function DrawScrollingText( text, y, texwide )
 		surface.SetTextPos( x + 3, y + 3 )
 		surface.DrawText( text )
 
-		surface.SetTextColor( 255, 255, 255, 255 )
+		surface.SetTextColor( 240, 226, 107, 234 )
 		surface.SetTextPos( x, y )
 		surface.DrawText( text )
 
