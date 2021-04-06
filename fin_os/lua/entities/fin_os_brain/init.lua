@@ -5,7 +5,7 @@ include( "shared.lua" )
 
 function ENT:Initialize()
 
-	self:SetModel("models/maxofs2d/hover_rings.mdl")
+	self:SetModel( "models/maxofs2d/hover_rings.mdl" )
 	self:SetModelScale( 1 )
 	self:Activate()
 	

@@ -929,7 +929,6 @@ function FINOS_SendNotification( string, type, player, lifeSeconds )
 end
 function FINOS_AlertPlayer( string, player )
 
-    -- Disabled ( don't need it )
     if GetConVar( "finos_disableprintchatmessages" ):GetInt() == 0 and player and player:IsValid() then
 
         player:PrintMessage( HUD_PRINTTALK, string )

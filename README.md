@@ -31,47 +31,6 @@
 * ```**finos_disablestrictmode** ( def. = 0 ) [ FCVAR_PROTECTED ]``` - Disables checking for angle of prop and crossing vector lines, if you just want to be joking around ( other servers might not accept the duplicate tho ).
 * ```**finos_disableprintchatmessages** ( def. = 1 ) [ FCVAR_PROTECTED ]``` - Disables printing messages in chat ( only legacy ).
 
-## BETA
-### 0.0.1 ( 28.03.21 )
-- Basic functionality
-### 0.0.2 ( 28.03.21 )
-- Added custom model, spawn icon and menu icon for SWEP tool
-- Added a visual way to view the area of the wing
-- Added a visual way to see if any vectors are crossing eachother
-- Added so you can have as many vector points as the alphabeth is long ( could be infinite )
-- Fixed bugs
-- Cleaned up and improved code
-### 0.0.3 ( 28.03.21 )
-- Added a way to adjust the scalar for lift ( IN_USE + SCROLL_WHEEL )
-- Added so the player can view the current scalar for the lift in the default pop-up settings panel
-- Added so the player can Right-Click to view/hide a panel that shows the wing's current speed and attack angle
-### 0.0.4 ( 29.03.21 )
-- Added so the user can attach another entity that will increase/decrease the *C[L]* value ( a flap )
-- Completed the way a fin receives lift ( the logic ) [ BIG CHANGE ]
-- Added ConVar "finos_rhodensistyfluidvalue" and "finos_maxscalarvalue"
-- Fixed bugs
-- Cleaned up and improved code
-### 0.0.41 ( 30.03.21 )
-- Updated entity icon
-- Updated GUI colors to match new logo
-### 0.0.42 ( 30.03.21 )
-- Fixed a few minor bugs
-### 0.0.5 ( 02.04.21 )
-- Added math and logic for checking if a to be new vector line crosses any old vector lines ( not allowed )
-### 0.0.6 ( 05.04.21 )
-- Finished up adding a program for checking if a new vector line crosses any old ones ( not allowed )
-- Added so after the first point is set, the prop always need to be in that local angle and have the same local normal vector from toolgun hit afterwards ( to not mess up the area ). In simple words: prop needs to have it's original angles for adding points and it can only be on one side ( strict mode )
-- Fixed some duplication issues/bugs
-- Added so it will check if the duplication has some security issues, like crossing lines ( strict mode )
-- Added ConVar "finos_disablestrictmode" ( important to use on servers that want no cheating with area definition )
-- Adjusted color to tool menu text
-- Added so Player can't set points within the area so it e.g. doubles up ( strict mode )
-- Adjusted the color pallette for the control panels
-### 0.0.61 ( 05.04.21 )
-- Small bug with duplication ( angles of entity on paste made to local angles instead )
-- Adjusted the error sound to lower volume
-- Fixed bug with angle of fin
-
 ## @todo
 - Make a custom world model for the fin tool SWEP
 - Should a fin be added to the undo list ( ? )
