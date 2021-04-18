@@ -12,10 +12,19 @@ local function WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle )
 
 end
 
+-- Easy check if entity is truly valid
+local function EntTruty( entity )
+
+    if entity and entity:IsValid() then return true end
+
+    return false
+
+end
+
 -- Disable scrolling when player is changing the scalar for Lift Force
 local function DisabledScrollingMenuClient( pl, key, disable )
 
-    if key == IN_USE and pl:GetActiveWeapon():GetClass() == "fin_os" then
+    if key == IN_USE and EntTruty( pl:GetActiveWeapon() ) and pl:GetActiveWeapon():GetClass() == "fin_os" then
 
         -- Update
         LocalPlayer():SetNWBool( "PlayerIsLookingAtFinAndChangingScalarValue", disable )
@@ -31,21 +40,21 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
     local Player = LocalPlayer()
 
-    if Player and Player:IsValid() then
+    if EntTruty( Player ) then
 
         local tr = Player:GetEyeTrace()
 
         local Entity = tr.Entity
 
         -- If player looks at a fin, maybe show the current settings/values
-        if Entity and Entity:IsValid() and Entity:GetNWBool( "fin_os_active" ) then
+        if EntTruty( Entity ) and Entity:GetNWBool( "fin_os_active" ) then
 
             local FinSettingsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAngleProperties", "ID12" )
             local pitchAttackAngle_FLAP = 0
             local FlapSettingsTable
             local ENT_FLAP = Entity:GetNWEntity( "fin_os_flapEntity" )
 
-            if ENT_FLAP:IsValid() then
+            if EntTruty( ENT_FLAP ) then
 
                 FlapSettingsTable = FINOS_GetDataToEntFinTable( ENT_FLAP, "fin_os__EntAngleProperties", "ID17" )
                 if FlapSettingsTable and FlapSettingsTable[ "AttackAngle_Pitch" ] then
@@ -87,7 +96,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 )
 
-                if Player:GetActiveWeapon():GetClass() ~= "fin_os" then
+                if EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() ~= "fin_os" then
 
                     draw.DrawText(
 
@@ -178,7 +187,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
             end
 
-        elseif Entity and Entity:IsValid() and Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
+        elseif EntTruty( Entity ) and Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
             local FinSettingsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAngleProperties", "ID14" )
 
@@ -239,7 +248,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
         end
 
-        if Player:GetActiveWeapon():GetClass() == "fin_os" then
+        if EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "fin_os" then
 
             local backgroundPosX = ( ScrW() - 300 - 20 )
             local backgroundPosY = 60 + 37
@@ -309,7 +318,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
         -- Display tracked fin entity
         local PHYSICSPROPERTIESSTABLE = FINOS_GetDataToEntFinTable( Player, "fin_os__EntBeingTracked", "ID15" )
 
-        if PHYSICSPROPERTIESSTABLE and PHYSICSPROPERTIESSTABLE["FinBeingTracked"] and PHYSICSPROPERTIESSTABLE["FinBeingTracked"]:IsValid() then
+        if PHYSICSPROPERTIESSTABLE and PHYSICSPROPERTIESSTABLE["FinBeingTracked"] and EntTruty( PHYSICSPROPERTIESSTABLE["FinBeingTracked"] ) then
 
             local width = 150
 
@@ -386,8 +395,10 @@ end )
 
 hook.Add("HUDShouldDraw", "fin_os:HUDShouldDraw", function( name )
 
+    local Player = LocalPlayer();
+
 	-- When Player is in slow motion
-	if LocalPlayer() and LocalPlayer():GetNWBool( "PlayerIsLookingAtFinAndChangingScalarValue" ) and name == "CHudWeaponSelection" then return false end
+	if EntTruty (Player ) and Player:GetNWBool( "PlayerIsLookingAtFinAndChangingScalarValue" ) and name == "CHudWeaponSelection" then return false end
 
 end )
 
@@ -395,13 +406,13 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
     local Player = LocalPlayer()
 
-    if Player and Player:IsValid() then
+    if EntTruty( Player ) then
 
         local tr = Player:GetEyeTrace()
 
         local Entity = tr.Entity
 
-        if Entity and Entity:IsValid() and Player and Player:IsValid() and Player:GetActiveWeapon():IsValid() and Player:GetActiveWeapon():GetClass() == "fin_os" then
+        if EntTruty( Entity ) and EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "fin_os" then
 
             local FinAreaPointsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID16" )
 
@@ -480,7 +491,7 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
         -- Just important if we have strict mode ON
         -- Tell the Player visually whats going on
-        if GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and Entity and Entity:IsValid() and Player and Player:IsValid() and Player:GetActiveWeapon():IsValid() and ( Player:GetActiveWeapon():GetClass() == "weapon_physgun" or Player:GetActiveWeapon():GetClass() == "fin_os" ) then
+        if GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and EntTruty( Entity ) and EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and ( Player:GetActiveWeapon():GetClass() == "weapon_physgun" or Player:GetActiveWeapon():GetClass() == "fin_os" ) then
 
             local FinAcceptedAngleAndHitNormal = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal", "ID19" )
 
@@ -495,7 +506,7 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
             local entMaxes = Entity:OBBMaxs()
 
             -- Only for physgun
-            if Entity:GetNWBool( "fin_os_active" ) and Player:GetActiveWeapon():GetClass() == "weapon_physgun" then
+            if Entity:GetNWBool( "fin_os_active" ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "weapon_physgun" then
 
                 local colorSignal1 = Color( 200, 170, 255 )
                 local colorSignal2 = Color( 200, 170, 255 )
@@ -512,7 +523,7 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
             end
 
-            if Player and Player:IsValid() and Player:GetActiveWeapon():GetClass() == "fin_os" and not isEAndShiftUsedToRotate then
+            if EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "fin_os" and not isEAndShiftUsedToRotate then
 
                 local text = [[Rotate me with "Shift" (｀_´)ゞ]]
                 local font = "GModWorldtip"
