@@ -1,7 +1,7 @@
 function SWEP:SecondaryAttack()
 
     local tr = self:GetTrace()
-    if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() or self:GetDisableTool() ) then return false end
+    if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() or self:GetDisableTool() ) then return end
 
     local OWNER = self:GetOwner()
     local Entity = tr.Entity
@@ -28,11 +28,10 @@ function SWEP:SecondaryAttack()
         end
 
         self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
-
-        return true
+        return
 
     end
 
-    return false
+    return
 
 end

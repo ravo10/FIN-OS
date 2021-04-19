@@ -18,10 +18,9 @@ SWEP.Gradient = surface.GetTextureID( "gui/gradient" )
 SWEP.InfoIcon = surface.GetTextureID( "gui/info" )
 SWEP.LastMessage = 0
 
-language.Add( "Undone_fin_os", "Undone a FIN OS" )
-language.Add( "Cleanup_fin_os", "FIN OS" )
-language.Add( "Cleaned_fin_os", "Cleaned up all FIN OS'" )
-language.Add( "sboxlimit_fin_os", "You've reached the FIN OS limit!" )
+language.Add( "Undone_fin_os_brain", "Undone a FIN OS" )
+language.Add( "Cleanup_fin_os_brain", "FIN OS" )
+language.Add( "Cleaned_fin_os_brain", "Cleaned up all FIN OS'" )
 
 net.Receive( "FINOS_SendLegacyNotification_CLIENT", function()
 
@@ -36,8 +35,4 @@ net.Receive( "FINOS_SendLegacyNotification_CLIENT", function()
 
 end )
 
-function SWEP:DrawHUD()
-
-    return true
-
-end
+function SWEP:DrawHUD() return true end

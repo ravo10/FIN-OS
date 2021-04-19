@@ -561,3 +561,23 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
     return false
 
 end )
+
+-- Get rid of empty clip sound
+hook.Add( "EntityEmitSound", "finos:EntityEmitSound", function( soundDataTable )
+
+    local IsClipEmptySound = soundDataTable[ "OriginalSoundName" ] == "Weapon_Pistol.Empty"
+
+    if CLIENT and LocalPlayer() then
+        
+        local playerActiveWeapon = LocalPlayer():GetActiveWeapon()
+
+        if playerActiveWeapon and playerActiveWeapon:IsValid() and playerActiveWeapon:GetClass() == "fin_os" and IsClipEmptySound then
+
+            -- Don't allow
+            return false
+
+        end
+        
+    end
+	
+end )

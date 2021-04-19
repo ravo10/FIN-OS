@@ -1,12 +1,14 @@
 function SWEP:PrimaryAttack()
 
     local tr = self:GetTrace()
-    if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() or self:GetDisableTool() ) then return false end
+    if ( not tr.Hit or not tr.Entity or not tr.Entity:IsValid() or self:GetDisableTool() ) then return end
 
     local Entity = tr.Entity
     local OWNER = self:GetOwner()
 
     if Entity and Entity:IsValid() and not Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
+
+        if FINOS_FinOSFinMaxAmountReachedByPlayer( Entity, OWNER ) then return end
 
         if not OWNER:KeyDown( IN_USE ) then
 
@@ -48,7 +50,7 @@ function SWEP:PrimaryAttack()
 
             -- Effect
             self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
-            return false
+            return
 
         else
 
@@ -121,7 +123,7 @@ function SWEP:PrimaryAttack()
             end
 
             self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
-            return true
+            return
 
         end
 
@@ -132,6 +134,6 @@ function SWEP:PrimaryAttack()
 
     end
 
-    return false
+    return
 
 end

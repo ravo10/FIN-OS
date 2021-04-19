@@ -26,6 +26,7 @@
 * Advanced validity checking of area ( when ```finos_disablestrictmode == 0``` )
 
 ### Console Variables
+* ```**finos_maxfin_os_ent** ( def. = 20 ) [ FCVAR_PROTECTED ]``` - Amount of Fin OS fin's possible for each Player to spawn.
 * ```**finos_rhodensistyfluidvalue** ( def. = 1.29 ) [ FCVAR_PROTECTED ]``` - Mass density ( rho ) that will be applied to Fin OS fin.
 * ```**finos_maxscalarvalue** ( def. = 69 ) [ FCVAR_PROTECTED ]``` - Maximum scalar value a player can apply to a Fin OS fin.
 * ```**finos_disablestrictmode** ( def. = 0 ) [ FCVAR_PROTECTED ]``` - Disables checking for angle of prop and crossing vector lines, if you just want to be joking around ( other servers might not accept the duplicate tho ).

@@ -21,7 +21,7 @@ function ENT:Initialize()
 	self:DrawShadow( false)
 
 	-- Create the flap data structure ( same as the fin )
-	self:SetNWBool( "fin_os_is_a_fin_flap", true )
+	self:SetNWBool( "fin_os_is_a_fin_flap", false )
 
 end
 
@@ -39,6 +39,13 @@ function ENT:RestAllPointsAndTimesForVelocityCalculation()
 	self:SetPointAAndTimeAAvailable( false )
 	self:SetPointBAndTimeBAvailable( false )
 	self:SetAllPointsAndTimesAvailable( false )
+
+end
+
+function ENT:OnRemove()
+
+	-- Remove Completly
+	if self and self:IsValid() and self:GetParent() and self:GetParent():IsValid() then FINOS_RemoveFinAndDataFromEntity( self:GetParent(), self:GetOwner(), false, true ) end
 
 end
 

@@ -27,8 +27,14 @@ AddCSLuaFile( "reload.lua" )
 -- ///////////////////////////////////////////////////////////////////////////////
 
 -- CONSOLE VARIABLES
-CreateConVar( "sbox_maxfin_os", 20 )
+CreateConVar(
 
+    "finos_maxfin_os_ent",
+    20,
+    FCVAR_PROTECTED,
+    "Change the maximum allowed Fin OS fin's a Player can have at once."
+
+)
 CreateConVar(
 
     "finos_rhodensistyfluidvalue",
@@ -105,11 +111,25 @@ function SWEP:Holster( Weapon )
 
 end
 
+-- Functions only important for SWEP tool
+function SWEP:GetTrace()
+
+    local OWNER = self:GetOwner()
+
+    local tr = util.GetPlayerTrace( OWNER )
+    tr.mask = bit.bor( CONTENTS_SOLID, CONTENTS_MOVEABLE, CONTENTS_MONSTER, CONTENTS_WINDOW, CONTENTS_DEBRIS, CONTENTS_GRATE, CONTENTS_AUX ) -- https://wiki.facepunch.com/gmod/Enums/CONTENTS
+    local trace = util.TraceLine( tr )
+
+    return trace
+
+end
+
 hook.Add( "Initialize", "fin_os:Initialize", function()
 
     -- Add Network Strings
     util.AddNetworkString("FINOS_UpdateEntityTableValue_CLIENT")
     util.AddNetworkString("FINOS_SendLegacyNotification_CLIENT")
+    util.AddNetworkString("FINOS_SendEffect_CLIENT")
 
 end )
 
@@ -153,6 +173,8 @@ if SERVER then
             local anyVectorLinesCrossingOrAngleHitNormalNotOK = false
 
             for k, v in pairs( AREAPOINTSTABLE ) do
+
+                if FINOS_FinOSFinMaxAmountReachedByPlayer( Entity, Player ) then return end
 
                 -- Virutally add points and check if any lines are crossing
                 if not anyVectorLinesCrossingOrAngleHitNormalNotOK then
@@ -218,45 +240,6 @@ if SERVER then
         if errorMessage2 then FINOS_SendNotification( errorMessage2, FIN_OS_NOTIFY_ERROR, Player, 7 ) end
 
     end )
-
-end
-
--- Functions only important for SWEP tool
-function SWEP:GetTrace()
-
-    local OWNER = self:GetOwner()
-
-    local tr = util.GetPlayerTrace( OWNER )
-    tr.mask = bit.bor( CONTENTS_SOLID, CONTENTS_MOVEABLE, CONTENTS_MONSTER, CONTENTS_WINDOW, CONTENTS_DEBRIS, CONTENTS_GRATE, CONTENTS_AUX ) -- https://wiki.facepunch.com/gmod/Enums/CONTENTS
-    local trace = util.TraceLine( tr )
-
-    return trace
-
-end
-function SWEP:DoShootEffect( hitpos, hitnormal, entity, physbone, bFirstTimePredicted )
-
-	self:EmitSound( self.ShootSound )
-	self:SendWeaponAnim( ACT_VM_PRIMARYATTACK ) -- View model animation
-
-	-- There's a bug with the model that's causing a muzzle to
-	-- appear on everyone's screen when we fire this animation.
-	self:GetOwner():SetAnimation( PLAYER_ATTACK1 ) -- 3rd Person Animation
-
-	if ( not bFirstTimePredicted ) then return end
-
-	local effectdata = EffectData()
-	effectdata:SetOrigin( hitpos )
-	effectdata:SetNormal( hitnormal )
-	effectdata:SetEntity( entity )
-	effectdata:SetAttachment( physbone )
-	util.Effect( "selection_indicator", effectdata )
-
-	local effectdata = EffectData()
-	effectdata:SetOrigin( hitpos )
-	effectdata:SetStart( self:GetOwner():GetShootPos() )
-	effectdata:SetAttachment( 1 )
-	effectdata:SetEntity( self )
-	util.Effect( "ToolTracer", effectdata )
 
 end
 
@@ -361,7 +344,7 @@ function FINOS_CheckIfTheLastTwoVectorLinesAreCrossing( Entity, areaPointsTable,
 
                     -- Tell the player
                     FINOS_SendNotification( "Unvalid next-point (crossing)!", FIN_OS_NOTIFY_ERROR, OWNER, 3.7 )
-                    self:EmitSound( "fin_os/error.wav", 41, 100 )
+                    OWNER:EmitSound( "fin_os/error.wav", 41, 100 )
 
                 end
 
@@ -622,7 +605,7 @@ function FINOS_CheckIfLastPointIsWithingAreaOfTriangle( ent, player, areaPointsT
 
                 -- Tell the player
                 FINOS_SendNotification( "Unvalid next-point (overlap)!", FIN_OS_NOTIFY_ERROR, player, 3.7 )
-                self:EmitSound( "fin_os/error.wav", 41, 100 )
+                player:EmitSound( "fin_os/error.wav", 41, 100 )
 
                 timer.Create( "fin_os__EntAreaPointCrossingLinesTIMER000" .. self:EntIndex(), 0.2, 1, function()
 
@@ -1102,36 +1085,112 @@ function FINOS_WriteDuplicatorDataForEntity( Entity ) -- The new entity will hav
 
 end
 
+-- Check if Fin OS fin max amount is reached for Player
+function FINOS_FinOSFinMaxAmountReachedByPlayer( ent, owner )
+    
+    -- Prevent adding more than allowed
+    local prevFinOSBrain = ent:GetNWEntity( "fin_os_brain" )
+    local prevFinOSBrainValid = prevFinOSBrain and prevFinOSBrain:IsValid()
+
+    if not prevFinOSBrainValid and ( owner:IsValid() and owner:GetNWInt( "fin_os_ent_amount", 0 ) >= GetConVar( "finos_maxfin_os_ent" ):GetInt() and not game.SinglePlayer() ) then
+
+        -- Tell the Player that the max amount is reached
+        FINOS_AlertPlayer( "You've hit the FIN OS limit!", owner )
+        FINOS_SendNotification( "You've reached the FIN OS limit!", FIN_OS_NOTIFY_ERROR, owner, 2.3 )
+        owner:SendLua( [[surface.PlaySound( "fin_os/fin_os_button10.wav" )]] )
+
+        return true
+
+    end
+
+    return false
+
+end
 -- Fin's Wings Brain ( final step )
 function FINOS_AddFinWingEntity( ent, owner )
 
-    -- Remove any (if) current fin wing from entity
+    -- Prevent adding more than allowed
     local prevFinOSBrain = ent:GetNWEntity( "fin_os_brain" )
-    if prevFinOSBrain and prevFinOSBrain:IsValid() then prevFinOSBrain:Remove() end
+    local prevFinOSBrainValid = prevFinOSBrain and prevFinOSBrain:IsValid()
 
     -- Make a fin wing
-    local entFin = ents.Create( "fin_os_brain" )
+    local entFin = prevFinOSBrain
 
-    entFin:SetPos( ent:LocalToWorld( ent:OBBCenter() ) ) -- Endre til midten av arealet vektor ??
-    entFin:SetAngles( ent:GetAngles() )
+    if not prevFinOSBrainValid then
 
-    entFin:SetName( "fin_os_finWingBrain" )
-    entFin:SetParent( ent )
-    entFin:SetOwner( owner )
-    entFin:SetCreator( owner )
+        entFin = ents.Create( "fin_os_brain" )
 
-    -- Spawn
-    entFin:Spawn()
-    entFin:Activate()
+        entFin:SetPos( ent:LocalToWorld( ent:OBBCenter() ) ) -- Endre til midten av arealet vektor ??
+        entFin:SetAngles( ent:GetAngles() )
+
+        entFin:SetName( "fin_os_finWingBrain" )
+        entFin:SetParent( ent )
+        entFin:SetOwner( owner )
+        entFin:SetCreator( owner )
+
+        -- Spawn
+        entFin:Spawn()
+        entFin:Activate()
+
+    end
 
     ent:SetNWEntity( "fin_os_brain", entFin )
-
-    owner:AddCount( "fin_os", ent )
-    owner:AddCleanup( "fin_os", ent )
 
     ent:SetNWBool( "fin_os_active", true )
 
     FINOS_WriteDuplicatorDataForEntity( ent )
+
+    owner:AddCount( "fin_os_brain", entFin )
+    owner:AddCleanup( "fin_os_brain", entFin )
+
+    if not prevFinOSBrainValid and not game.SinglePlayer() then owner:SetNWInt( "fin_os_ent_amount", owner:GetNWInt( "fin_os_ent_amount", 0 ) + 1 ) end
+
+end
+-- Remove Fin from Entity
+function FINOS_RemoveFinAndDataFromEntity( ent, owner, onlyBasicCleaning, ignoreFinOSBrain )
+
+    -- Remove fin_os_brain
+    local foundOneFinWing = false
+    local prevFinOSBrain = ent:GetNWEntity( "fin_os_brain" )
+    local prevFinOSBrainValid = prevFinOSBrain and prevFinOSBrain:IsValid()
+
+    if not ignoreFinOSBrain and prevFinOSBrainValid then prevFinOSBrain:Remove() end
+    if prevFinOSBrainValid then foundOneFinWing = true end
+
+    -- CLEAN UP
+    -- Empty all data
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaPoints", nil )
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaVectors", nil )
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaVectorLinesParameter", nil )
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaPointCrossingLines", nil )
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaAcceptedAngleAndHitNormal", nil )
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntAngleProperties", nil )
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntPhysicsProperties", nil )
+
+    ent[ "FinOS_data" ] = nil
+
+    if onlyBasicCleaning then return foundOneFinWing end
+
+    ent:SetNWBool( "fin_os_active", false )
+
+    -- If the Player has this fin as the tracked one
+    if owner and owner:IsValid() and owner:GetNWEntity( "fin_os_tracked_fin" ):IsValid() and owner:GetNWEntity( "fin_os_tracked_fin" ) == ent then
+
+        owner:SetNWEntity( "fin_os_tracked_fin", nil )
+
+        FINOS_AddDataToEntFinTable( owner, "fin_os__EntBeingTracked", nil, owner )
+
+    end
+
+    -- Remove saved duplicator settings for entity
+    if not ignoreFinOSBrain then duplicator.ClearEntityModifier( ent, "FinOS" ) end
+
+    -- Remove fin
+    if ent:GetNWEntity( "fin_os_flapEntity" ):IsValid() then RemoveFlapFromFin( ent:GetNWEntity( "fin_os_flapEntity" ) ) end
+
+    if not game.SinglePlayer() then owner:SetNWInt( "fin_os_ent_amount", owner:GetNWInt( "fin_os_ent_amount", 1 ) - 1 ) end
+
+    return foundOneFinWing
 
 end
 

@@ -61,10 +61,13 @@ SWEP.ShouldDropOnDie = true
 SWEP.IronSightsPos = Vector( 0, 0, 0 )
 SWEP.IronSightsAng = Vector( 0, 0, 0 )
 
-cleanup.Register( "fin_os" )
-
 util.PrecacheModel( SWEP.ViewModel )
 util.PrecacheModel( SWEP.WorldModel )
+
+util.PrecacheSound("fin_os/error.wav")
+util.PrecacheSound("fin_os/fin_os_button10.wav")
+
+cleanup.Register( "fin_os_brain" )
 
 function SWEP:SetupDataTables()
 
@@ -85,29 +88,92 @@ function SWEP:SetupDataTables()
 
 end
 
+-- Functions only important for SWEP tool
+function SWEP:DoShootEffect( hitpos, hitnormal, entity, physbone, bFirstTimePredicted )
+
+    local IsNotSinglePlayerAndServer = not game.SinglePlayer() and SERVER
+    local IsSinglePlayer = game.SinglePlayer()
+
+	self:EmitSound( self.ShootSound )
+	if IsNotSinglePlayerAndServer or IsSinglePlayer then self:SendWeaponAnim( ACT_VM_PRIMARYATTACK ) end -- View model animation
+
+	-- There's a bug with the model that's causing a muzzle to
+	-- appear on everyone's screen when we fire this animation.
+	if IsNotSinglePlayerAndServer or IsSinglePlayer then self:GetOwner():SetAnimation( PLAYER_ATTACK1 ) end -- 3rd Person Animation
+
+	if ( not bFirstTimePredicted ) then return end
+
+	local effectdata = EffectData()
+	effectdata:SetOrigin( hitpos )
+	effectdata:SetNormal( hitnormal )
+	effectdata:SetEntity( entity )
+	effectdata:SetAttachment( physbone )
+	util.Effect( "finos_selection_indicator", effectdata )
+
+	local effectdata = EffectData()
+	effectdata:SetOrigin( hitpos )
+	effectdata:SetStart( self:GetOwner():GetShootPos() )
+	effectdata:SetAttachment( 1 )
+	effectdata:SetEntity( self )
+	util.Effect( "finos_tooltracer", effectdata )
+
+    if IsNotSinglePlayerAndServer then
+
+        -- Send to client
+        net.Start( "FINOS_SendEffect_CLIENT" )
+
+            net.WriteTable( {
+
+                self = self,
+                parameters = { hitpos, hitnormal, entity, physbone, bFirstTimePredicted }
+
+            } )
+
+        net.Send( self:GetOwner() )
+
+    end
+
+end
+
+if CLIENT then
+
+    net.Receive( "FINOS_SendEffect_CLIENT", function()
+
+        local data = net.ReadTable()
+
+        local self = data[ "self" ]
+        local parameters = data[ "parameters" ]
+
+        self:DoShootEffect( parameters[ 1 ], parameters[ 2 ], parameters[ 3 ], parameters[ 4 ], parameters[ 5 ] )
+
+    end )
+
+end
+
 -- Data manipulation
 -- This is getting called SERVER and CLIENT side
+local function IsEntValid( ent ) return ent and ent:IsValid() end
 local function WriteFinOSTableData( ent, entTableID, _table, insertTableDontMerge, overwriteCurrentTable )
 
     -- Maybe reset the table
     if not _table then
 
-        if ent[ "FinOS_data" ] then ent[ "FinOS_data" ][ entTableID ] = nil end return
+        if IsEntValid( ent ) and ent[ "FinOS_data" ] then ent[ "FinOS_data" ][ entTableID ] = nil end return
 
     end
 
-    if not ent[ "FinOS_data" ] then ent[ "FinOS_data" ] = {} end
+    if IsEntValid( ent ) and not ent[ "FinOS_data" ] then ent[ "FinOS_data" ] = {} end
 
-    if not ent[ "FinOS_data" ][ entTableID ] then ent[ "FinOS_data" ][ entTableID ] = {} end
+    if IsEntValid( ent ) and not ent[ "FinOS_data" ][ entTableID ] then ent[ "FinOS_data" ][ entTableID ] = {} end
 
     -- Overwrite
-    if overwriteCurrentTable then
+    if IsEntValid( ent ) and overwriteCurrentTable then
 
         ent[ "FinOS_data" ][ entTableID ] = _table
 
     else
 
-        if insertTableDontMerge then
+        if IsEntValid( ent ) and insertTableDontMerge then
 
             -- Insert table into table on SERVER side
             table.insert( ent[ "FinOS_data" ][ entTableID ], _table )
@@ -115,7 +181,7 @@ local function WriteFinOSTableData( ent, entTableID, _table, insertTableDontMerg
         else
 
             -- Overwrite values on SERVER and CLIENT side
-            for k, v in pairs( _table ) do ent[ "FinOS_data" ][ entTableID ][ k ] = v end
+            for k, v in pairs( _table ) do if IsEntValid( ent ) then ent[ "FinOS_data" ][ entTableID ][ k ] = v end end
 
         end
 
@@ -239,3 +305,22 @@ function FINOS_GetDataToEntFinTable( ent, entTableID, ID )
     end
 
 end
+
+hook.Add( "EntityEmitSound", "TimeWarpSounds", function( soundDataTable )
+
+    local IsClipEmptySound = soundDataTable[ "OriginalSoundName" ] == "Weapon_Pistol.Empty"
+
+    if CLIENT and LocalPlayer() then
+        
+        local playerActiveWeapon = LocalPlayer():GetActiveWeapon()
+
+        if playerActiveWeapon and playerActiveWeapon:IsValid() and playerActiveWeapon:GetClass() == "fin_os" and IsClipEmptySound then
+
+            -- Don't allow
+            return false
+
+        end
+        
+    end
+	
+end )
