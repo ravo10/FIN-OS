@@ -5,10 +5,10 @@
 -- ///////////////////////////////////////////////////////////////////////////////
 sound.Add( {
 	name = "FinOS.ToolFire",
-	channel = CHAN_STATIC,
+	channel = CHAN_WEAPON,
 	volume = 1,
 	level = 66,
-	pitch = { 101, 104 },
+	pitch = { 220, 223 },
 	sound = "fin_os/fin_os_toolgun_shoot.wav"
 } )
 
