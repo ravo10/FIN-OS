@@ -27,6 +27,14 @@ function SWEP:Reload()
     -- Remove fin or flap
     if Entity and Entity:IsValid() then
 
+        -- Check if it is actually a fin or flap
+        if not Entity[ "FinOS_data" ] and not Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
+
+            FINOS_SendNotification( "This is not a FIN OS fin or flap!", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
+            return
+
+        end
+
         -- Remove disabling tool gun
         self:SetDisableTool( false )
         timer.Remove( "fin_os__EntAreaPointCrossingLinesTIMER000" .. self:EntIndex() )

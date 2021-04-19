@@ -1096,7 +1096,7 @@ function FINOS_FinOSFinMaxAmountReachedByPlayer( ent, owner )
 
         -- Tell the Player that the max amount is reached
         FINOS_AlertPlayer( "You've hit the FIN OS limit!", owner )
-        FINOS_SendNotification( "You've reached the FIN OS limit!", FIN_OS_NOTIFY_ERROR, owner, 2.3 )
+        FINOS_SendNotification( "You've hit the FIN OS limit!", FIN_OS_NOTIFY_ERROR, owner, 2.3 )
         owner:SendLua( [[surface.PlaySound( "fin_os/fin_os_button10.wav" )]] )
 
         return true
@@ -1169,6 +1169,9 @@ function FINOS_RemoveFinAndDataFromEntity( ent, owner, onlyBasicCleaning, ignore
 
     ent[ "FinOS_data" ] = nil
 
+    -- Remove saved duplicator settings for entity
+    if not ignoreFinOSBrain then duplicator.ClearEntityModifier( ent, "FinOS" ) end
+
     if onlyBasicCleaning then return foundOneFinWing end
 
     ent:SetNWBool( "fin_os_active", false )
@@ -1181,9 +1184,6 @@ function FINOS_RemoveFinAndDataFromEntity( ent, owner, onlyBasicCleaning, ignore
         FINOS_AddDataToEntFinTable( owner, "fin_os__EntBeingTracked", nil, owner )
 
     end
-
-    -- Remove saved duplicator settings for entity
-    if not ignoreFinOSBrain then duplicator.ClearEntityModifier( ent, "FinOS" ) end
 
     -- Remove fin
     if ent:GetNWEntity( "fin_os_flapEntity" ):IsValid() then RemoveFlapFromFin( ent:GetNWEntity( "fin_os_flapEntity" ) ) end

@@ -3,6 +3,15 @@
 -- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
 -- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
 -- ///////////////////////////////////////////////////////////////////////////////
+sound.Add( {
+	name = "FinOS.ToolFire",
+	channel = CHAN_STATIC,
+	volume = 1,
+	level = 66,
+	pitch = { 101, 104 },
+	sound = "fin_os/fin_os_toolgun_shoot.wav"
+} )
+
 SWEP.PrintName      = "FIN OS Tool"
 SWEP.Author         = "ravo (Norway)"
 SWEP.Category       = "ravo Norway"
@@ -40,7 +49,7 @@ SWEP.AutoSwitchFrom = false
 
 SWEP.Tool = {}
 
-SWEP.ShootSound = Sound( "Airboat.FireGunRevDown" )
+SWEP.ShootSound = Sound( "FinOS.ToolFire" )
 
 SWEP.Primary.ClipSize       = -1
 SWEP.Primary.DefaultClip    = -1
