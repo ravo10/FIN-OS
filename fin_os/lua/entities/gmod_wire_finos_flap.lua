@@ -19,10 +19,10 @@ if WireToolSetup then
 
         "Attack Angle (pitch) [STRING]",
         "Attack Angle (pitch)[INT]",
-        "Area (meters) [STRING]",
-        "Area (meters)[FLOAT]",
-        "Area (inches) [STRING]",
-        "Area (inches)[FLOAT]"
+        "Area1 (meters) [STRING]",
+        "Area1 (meters)[FLOAT]",
+        "Area2 (inches) [STRING]",
+        "Area2 (inches)[FLOAT]"
 
     }
     local BaseTriOut = {

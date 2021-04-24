@@ -20,20 +20,20 @@ if WireToolSetup then
 
         "Attack Angle (pitch) [STRING]",
         "Attack Angle (pitch)[INT]",
-        "Area (meters) [STRING]",
-        "Area (meters)[FLOAT]",
-        "Area (inches) [STRING]",
-        "Area (inches)[FLOAT]",
+        "Area1 (meters) [STRING]",
+        "Area1 (meters)[FLOAT]",
+        "Area2 (inches) [STRING]",
+        "Area2 (inches)[FLOAT]",
         "Lift Force (Newtons) [STRING]",
         "Lift Force (Newtons)[INT]",
         "Scalar (Lift) [STRING]",
         "Scalar (Lift)[INT]",
-        "Speed (Kph) [STRING]",
-        "Speed (Kph)[INT]",
-        "Speed (Mph) [STRING]",
-        "Speed (Mph)[INT]",
-        "Speed (Mps) [STRING]",
-        "Speed (Mps)[INT]",
+        "Speed1 (Kph) [STRING]",
+        "Speed1 (Kph)[INT]",
+        "Speed2 (Mph) [STRING]",
+        "Speed2 (Mph)[INT]",
+        "Speed3 (Mps) [STRING]",
+        "Speed3 (Mps)[INT]",
         "Being Tracked (anyone) [STRING]",
         "Being Tracked (anyone)[BOOL]"
 
@@ -231,7 +231,7 @@ if WireToolSetup then
                 AI_str      = AI .. " In²"
                 LFN_str     = LFN .. " N"
                 SCALAR_str  = tostring( SCALAR )
-                SKMH_str    = SKMH .. " kps"
+                SKMH_str    = SKMH .. " kph"
                 SMPH_str    = SMPH .. " mph"
                 MPS_str     = MPS .. " mps"
                 if BT < 1 then BT_str = "No" else BT_str = "Yes" end

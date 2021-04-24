@@ -3,12 +3,12 @@
 
 **[FIN OS Tool on Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261)**
 
-### You can find the stand alone tool under: **Weapons => ravo Norway => Fin OS Tool**
+### You can find the stand alone tool under: **Weapons => Tools => Fin OS Tool**
 
 **Made from scratch, and based on the modern lift equation: https://wright.nasa.gov/airplane/lifteq.html**
 
 ### How to use:
-* You can find the stand alone tool under: ***Weapons => ravo Norway => Fin OS Tool***
+* You can find the stand alone tool under: ***Weapons => Tools => Fin OS Tool***
 * **Left-Click to apply** 3 - 26 local origo originated vector points on prop, to get started. This will calculate the area using .5 the length of the cross product for all the triangles
 * **( IN_USE + Left-Click ) to add** a flap. Connect by clicking on the fin/flap and on the flap/fin
 * **Right-Click to add** fin to *tracked fin table*
