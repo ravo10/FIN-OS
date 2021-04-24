@@ -24,6 +24,7 @@
 * Supports SBOX max
 * Some ConVar settings
 * Advanced validity checking of area ( when ```finos_disablestrictmode == 0``` )
+* Supports Wiremod input/output ( *Physics => FIN OS Tool* )
 
 ### Console Variables
 * ```**finos_maxfin_os_ent** ( def. = 20 ) [ FCVAR_PROTECTED ]``` - Amount of Fin OS fin's possible for each Player to spawn ( only for multiplayer ).

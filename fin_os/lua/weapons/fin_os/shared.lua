@@ -14,7 +14,7 @@ sound.Add( {
 
 SWEP.PrintName      = "FIN OS Tool"
 SWEP.Author         = "ravo (Norway)"
-SWEP.Category       = "ravo Norway"
+SWEP.Category       = "Tools"
 SWEP.Contact        = "N/A"
 SWEP.Purpose        = "Produce a FIN (prop-physics)"
 SWEP.Instructions   = [[
