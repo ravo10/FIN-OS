@@ -6,7 +6,7 @@ include( "shared.lua" )
 function ENT:Initialize()
 
 	self:SetModel( "models/maxofs2d/hover_rings.mdl" )
-	self:SetModelScale( 1 )
+	self:SetModelScale( 1.2 )
 	self:Activate()
 	
 	self:SetColor( Color( 255, 215, 0, 255 ) )
@@ -20,12 +20,12 @@ function ENT:Initialize()
 	
 	self:DrawShadow( false)
 
-	-- Create the flap data structure ( same as the fin )
+	-- Create the flap data structure ( same as the fin ) ? BUG
 	self:SetNWBool( "fin_os_is_a_fin_flap", false )
 
 end
 
-function ENT:GravGunPickupAllowed(pl) return false end
+function ENT:GravGunPickupAllowed( pl ) return false end
 
 function ENT:RestAllPointsAndTimesForVelocityCalculation()
 
@@ -45,7 +45,15 @@ end
 function ENT:OnRemove()
 
 	-- Remove Completly
-	if self and self:IsValid() and self:GetParent() and self:GetParent():IsValid() then FINOS_RemoveFinAndDataFromEntity( self:GetParent(), self:GetOwner(), false, true ) end
+	if self and self:IsValid() and self:GetParent() and self:GetParent():IsValid() then
+
+		-- Remove flap
+		local flapEntity = self:GetParent():GetNWEntity( "fin_os_flapEntity" )
+		if flapEntity and flapEntity:IsValid() then FINOS_RemoveFlapFromFin( flapEntity ) end
+		
+		FINOS_RemoveFinAndDataFromEntity( self:GetParent(), self:GetOwner(), false, true )
+	
+	end
 
 end
 
@@ -67,7 +75,10 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 		-- Check that table values are OK
 		if not CURRENT_AREA_METER then return end
 
-		local vectorDeltaDistanceABLength_Units = FINOS_CreateVectorFromTwoPoints( self:GetVelocityPointA(), self:GetVelocityPointB() ):Length()
+		local vectorDeltaDistanceABLength_Units = FINOS_CreateVectorFromTwoPoints(
+			Vector( self:GetVelocityPointA()[ 1 ], self:GetVelocityPointA()[ 2 ], 0 ),
+			Vector( self:GetVelocityPointB()[ 1 ], self:GetVelocityPointB()[ 2 ], 0 )
+		):Length()
 		local timeDeltaTime = ( tonumber( self:GetVelocityTimeB() ) - tonumber( self:GetVelocityTimeA() ) )
 
 		-- 1 foot = 12 units = 0.3048 meter
@@ -81,7 +92,13 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 		if entPhysicsObject:IsValid() then
 
 			local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( entFinParentProp, "fin_os__EntAngleProperties", "ID2" )
-			local SCALAR = FINOS_GetDataToEntFinTable( entFinParentProp, "fin_os__EntPhysicsProperties", "ID31" )[ "FinOS_LiftForceScalarValue" ] -- Adds a little more juice
+			local SCALAR_Normal = FINOS_GetDataToEntFinTable( entFinParentProp, "fin_os__EntPhysicsProperties", "ID31" )[ "FinOS_LiftForceScalarValue_Normal" ] -- Adds a little more juice
+			local SCALAR_Wiremod
+			if entFinParentProp:GetNWBool( "IgnoreRealScalarValue" ) then
+				SCALAR_Wiremod = FINOS_GetDataToEntFinTable( entFinParentProp, "fin_os__Wiremod_InputValues", "ID31_Wiremod" )[ "FinOS_LiftForceScalarValue_Wiremod" ]
+			end
+
+			local SCALAR = SCALAR_Wiremod or SCALAR_Normal
 
 			-- Add scalar to parent if needed ( first time )
 			if not SCALAR then SCALAR = FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE end
@@ -91,7 +108,7 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			-- INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION INITIIALIZATION
 			-- ///////////////////////////////////////////////////////////////////////////////
 
-			local ATTACKANGLESFINTABLE = FINOS_CalculateAttackAnglesDegreesFor_CL( entFinParentProp )
+			local ATTACKANGLESFINTABLE = FINOS_CalculateAttackAnglesDegreesFor_CL( entFinParentProp, entFinParentProp:GetNWBool( "IgnoreRealPitchAttackAngle" ) )
 
 			-- Calculate Lift Force [ FIN ]
 			local CALULATETFORCESFINTABLE = FINOS_CalculateLiftForce(
@@ -100,12 +117,14 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 				ATTACKANGLESFINTABLE,
 				GetConVar( "finos_rhodensistyfluidvalue" ):GetInt(),
 				CURRENT_VELOCITY_MeterSecond,
+				timeDeltaTime,
 				CURRENT_AREA_METER,
 				SCALAR
 
 			)
 
 			local CURRENT_LIFT_FORCE_IN_NEWTONS__FIN = CALULATETFORCESFINTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS" ]
+			local CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FIN = CALULATETFORCESFINTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC" ]
 			local CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FIN = CALULATETFORCESFINTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED" ]
 
 			-- ///////////////////////////////////////////////////////////////////////////////
@@ -120,6 +139,7 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			local CALULATETFORCESFLAPTABLE
 
 			local CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP = 0
+			local CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FLAP = 0
 			local CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP = 0
 
 			local ENT_FLAP = entFinParentProp:GetNWEntity( "fin_os_flapEntity" )
@@ -127,7 +147,8 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			if ENT_FLAP and ENT_FLAP:IsValid() then
 
 				ANGLEPROPERTIESFROMFLAPTABLE = FINOS_GetDataToEntFinTable( ENT_FLAP, "fin_os__EntAngleProperties", "ID2" )
-				ATTACKANGLESFROMFLAPTABLE = FINOS_CalculateAttackAnglesDegreesFor_CL( ENT_FLAP )
+
+				ATTACKANGLESFROMFLAPTABLE = FINOS_CalculateAttackAnglesDegreesFor_CL( ENT_FLAP, ENT_FLAP:GetNWBool( "IgnoreRealPitchAttackAngle" ) )
 
 				if ATTACKANGLESFROMFLAPTABLE then
 
@@ -136,11 +157,12 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 
 						ENT_FLAP, ATTACKANGLESFROMFLAPTABLE,
 						GetConVar( "finos_rhodensistyfluidvalue" ):GetInt(),
-						CURRENT_VELOCITY_MeterSecond, ( CURRENT_AREA_METER / 4 ), SCALAR
+						CURRENT_VELOCITY_MeterSecond, timeDeltaTime, ( CURRENT_AREA_METER / 4 ), SCALAR
 					
 					)
 
 					CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP = CALULATETFORCESFLAPTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS" ]
+					CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FLAP = CALULATETFORCESFLAPTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC" ]
 					CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP = CALULATETFORCESFLAPTABLE[ "CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED" ]
 
 				end
@@ -163,12 +185,14 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 
 			end
 
+			local THEACTUALTOTALLIFTFORCEBEINGUSED = ( CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FLAP )
+
 			-- ** THE MAGIC ** --
 			entPhysicsObject:ApplyForceCenter( Vector(
 
 				( ATTACKANGLESFINTABLE[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ][ 1 ] + FLAPANGLEVECTOR1 ),
 				( ATTACKANGLESFINTABLE[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ][ 2 ] + FLAPANGLEVECTOR2 ),
-				( CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP )
+				THEACTUALTOTALLIFTFORCEBEINGUSED
 
 			) )
 
@@ -201,10 +225,13 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			FINOS_AddDataToEntFinTable( entFinParentProp, "fin_os__EntPhysicsProperties", {
 
 				VelocityKmH							= CURRENT_VELOCITY_KmHour,
-				LiftForceNewtonsModified_beingUsed	= ( CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FLAP ),
+				LiftForceNewtonsModified_realistic	= ( CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FLAP ),
+				LiftForceNewtonsModified_beingUsed	= THEACTUALTOTALLIFTFORCEBEINGUSED,
 				LiftForceNewtonsNotModified			= ( CURRENT_LIFT_FORCE_IN_NEWTONS__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP ),
 				AreaMeterSquared					= CURRENT_AREA_METER,
-				FinOS_LiftForceScalarValue			= SCALAR
+				FinOS_LiftForceScalarValue			= SCALAR,
+				FinOS_LiftForceScalarValue_Normal	= SCALAR_Normal or FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE,
+				FinOS_LiftForceScalarValue_Wiremod	= FinOS_LiftForceScalarValue_Wiremod
 
 			}, nil, "ID2", true )
 
@@ -255,8 +282,9 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 							AttackAngle_Pitch_FLAP				= FLAPATTACKANGLE,
 							AttackAngle_RollCosinus_FLAP		= FLAPROLLFRACTION,
 							VelocityKmH							= CURRENT_VELOCITY_KmHour,
-							LiftForceNewtonsModified_beingUsed	= CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED__FIN,
-							LiftForceNewtonsNotModified			= CURRENT_LIFT_FORCE_IN_NEWTONS__FIN,
+							LiftForceNewtonsModified_realistic	= ( CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC__FLAP ),
+							LiftForceNewtonsModified_beingUsed	= THEACTUALTOTALLIFTFORCEBEINGUSED,
+							LiftForceNewtonsNotModified			= ( CURRENT_LIFT_FORCE_IN_NEWTONS__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP ),
 							AreaMeterSquared					= CURRENT_AREA_METER
 			
 						}, OWNER, "ID3", true )
@@ -334,6 +362,35 @@ function ENT:Think()
 	if entFinParentProp and entFinParentProp:IsValid() then
 
 		self:ApplyForceLiftToFinWing( entFinParentProp )
+
+		-- For after duplication
+		local flap = entFinParentProp:GetNWEntity( "fin_os_flapEntity" )
+
+		if (
+
+			entFinParentProp[ "FinOS_data" ] and entFinParentProp[ "FinOS_data" ][ "fin_os_fin_has_a_flap" ] and
+			( not flap or ( flap and not flap:IsValid() ) )
+
+		) then
+
+			-- Find the Flap if any, that is welded to the Fin
+			for _, ent in pairs( constraint.GetAllConstrainedEntities( entFinParentProp ) ) do
+		
+				-- Find the Flap that is welded to the Fin, and store it as the flap
+				if ent[ "FinOS_data" ] then
+
+					if ent[ "FinOS_data" ][ "fin_os_is_a_fin_flap" ] and ent[ "FinOS_data" ][ "fin_os__EntAngleProperties" ][ "BaseAngle" ] then
+
+						-- Set the Entity as the flap virtually
+						FINOS_AddFlapEntity( entFinParentProp, ent )
+
+					end
+
+				end
+		
+			end
+
+		end
 
 	end
 

@@ -1,18 +1,5 @@
 local lastReloadTime = CurTime()
 
-local function RemoveFlapFromFin( ent )
-
-    -- Remove flap from fin
-    ent:SetNWBool( "fin_os_is_a_fin_flap", false )
-    local FIN_FLAP_FINPARENTENT = ent:GetNWEntity( "fin_os_flap_finParentEntity", nil )
-
-    FIN_FLAP_FINPARENTENT:SetNWEntity( "fin_os_flapEntity", nil )
-    ent:SetNWEntity( "fin_os_flap_finParentEntity", nil )
-
-    FINOS_AddDataToEntFinTable( ent, "fin_os__EntAngleProperties", nil )
-
-end
-
 function SWEP:Reload()
 
     local tr = self:GetTrace()
@@ -28,7 +15,7 @@ function SWEP:Reload()
     if Entity and Entity:IsValid() then
 
         -- Check if it is actually a fin or flap
-        if not Entity[ "FinOS_data" ] and not Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
+        if not Entity[ "FinOS_data" ] and ( not Entity:GetNWBool( "fin_os_is_a_fin_flap" ) and not Entity:GetNWBool( "fin_os_active" ) ) then
 
             FINOS_SendNotification( "This is not a FIN OS fin or flap!", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
             return
@@ -42,10 +29,10 @@ function SWEP:Reload()
 
         if Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
-            RemoveFlapFromFin( Entity )
+            FINOS_RemoveFlapFromFin( Entity )
 
-            FINOS_AlertPlayer( "[FLAP] **Removed flap attachment to a fin", OWNER )
-            FINOS_SendNotification( "[FLAP] Removed flap att. to a FIN OS fin", FIN_OS_NOTIFY_CLEANUP, OWNER, 3.5 )
+            FINOS_AlertPlayer( "[FLAP] **Removed Flap from fin", OWNER )
+            FINOS_SendNotification( "[FLAP] Removed Flap from fin", FIN_OS_NOTIFY_CLEANUP, OWNER, 3.5 )
 
             -- Play sound
             OWNER:EmitSound( "garrysmod/save_load1.wav", 30, 300 )
@@ -56,7 +43,7 @@ function SWEP:Reload()
         end
 
         -- Reset prop to normal
-        if not FINOS_RemoveFinAndDataFromEntity( Entity, OWNER, true ) then
+        if not Entity:GetNWBool( "fin_os_is_a_fin_flap" ) and not FINOS_RemoveFinAndDataFromEntity( Entity, OWNER, true ) then
 
             -- Reset area points
             FINOS_AlertPlayer( "**Removed one or two area points from fin", OWNER )
@@ -67,6 +54,10 @@ function SWEP:Reload()
             return
 
         end
+
+        -- Clean up any flap entities
+        self:SetTempFlapRelatedEntity0( nil )
+        self:SetTempFlapRelatedEntity1( nil )
 
         -- Done Cleaning up..
         FINOS_AlertPlayer( "**Removed all FIN OS settings from prop", OWNER )

@@ -91,19 +91,11 @@ function SWEP:PrimaryAttack()
                 -- Sort out the one that is the fin
                 if ENT0:GetNWBool( "fin_os_active" ) then ENT_FIN = ENT0 ENT_FLAP = ENT1 else ENT_FIN = ENT1 ENT_FLAP = ENT0 end
 
-                -- Create the flap data structure ( same as the fin )
-                ENT_FLAP:SetNWBool( "fin_os_is_a_fin_flap", true )
-                ENT_FLAP:SetNWEntity( "fin_os_flap_finParentEntity", ENT_FIN )
+                -- Add Flap
+                local currentEntAngle = FINOS_AddFlapEntity( ENT_FIN, ENT_FLAP )
 
-                local currentEntAngle = ENT_FLAP:GetAngles()
-
-                FINOS_AddDataToEntFinTable( ENT_FLAP, "fin_os__EntAngleProperties", {
-
-                    BaseAngle = currentEntAngle
-
-                }, nil, "ID11", true )
-
-                ENT_FIN:SetNWEntity( "fin_os_flapEntity", ENT_FLAP )
+                -- Update Fin Duplicator settings
+                FINOS_WriteDuplicatorDataForEntity( ENT_FIN )
 
                 FINOS_AlertPlayer( "[FLAP] Current base angle (P, Y, R) set to: (" .. math.Round( currentEntAngle[ 1 ] ) .. ", " .. math.Round( currentEntAngle[ 2 ] ) .. ", " .. math.Round( currentEntAngle[ 3 ] ) .. ")", OWNER )
                 FINOS_AlertPlayer( "[FLAP] Flap added to fin! Area is preset to ¼ of the fin area", OWNER )

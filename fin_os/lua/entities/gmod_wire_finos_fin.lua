@@ -40,7 +40,7 @@ if WireToolSetup then
     }
     local BaseTriOut = {
 
-        "- ˚",      -1,
+        "-˚",       -1,
         "- m²",     -1,
         "- In²",    -1,
         "- N",      -1,
@@ -112,13 +112,15 @@ if WireToolSetup then
 
     function ENT:TriggerInput( iname, value )
 
+        local inputSrc = self.Inputs[ iname ].Src
+
         if ( iname == "Entity" and value and value:IsValid() ) then self.FinEntity = value
         elseif ( iname == WireInputs[ 2 ] and value and isnumber( value ) ) then self.Scalar = value
         elseif ( iname == WireInputs[ 3 ] and value and isnumber( value ) ) then self.PitchAngle = value end
 
-        if ( iname == "Entity" and ( ( value and not value:IsValid() ) or value == nil ) ) then self.FinEntity = nil
-        elseif ( iname == WireInputs[ 2 ] and value == 0 ) then self.Scalar = BaseTriOut[ 5 ]
-        elseif ( iname == WireInputs[ 3 ] and value == 0 ) then self.PitchAngle = BaseTriOut[ 1 ] end
+        if ( not inputSrc and iname == "Entity" ) then self.FinEntity = nil
+        elseif ( not inputSrc and iname == WireInputs[ 2 ] ) then self.Scalar = nil
+        elseif ( not inputSrc and iname == WireInputs[ 3 ] ) then self.PitchAngle = nil end
 
     end
 
@@ -226,7 +228,7 @@ if WireToolSetup then
                 MPS     = round( WIREFINFLAPOUTPUTDATA[ "FIN_VelocityMps" ] )
                 BT      = WIREFINFLAPOUTPUTDATA[ "FIN_FinBeingTracked" ]
                 
-                AAP_str     = AAP .. " ˚"
+                AAP_str     = AAP .. "˚"
                 AM_str      = AM .. " m²"
                 AI_str      = AI .. " In²"
                 LFN_str     = LFN .. " N"
@@ -242,11 +244,21 @@ if WireToolSetup then
             local LiftScalarInput = self.Scalar
             local AttackPitchAngleInput = self.PitchAngle
 
-            if FinEnt[ "FinOS_data" ] and FinEnt[ "FinOS_data" ][ "fin_os__EntPhysicsProperties" ] then
-                
-                FinEnt[ "FinOS_data" ][ "fin_os__EntPhysicsProperties" ][ "FinOS_LiftForceScalarValue" ] = LiftScalarInput
-                FinEnt[ "FinOS_data" ][ "fin_os__EntAngleProperties" ][ "AttackAngle_Pitch" ] = AttackPitchAngleInput
+            -- Tell Fin OS Brain to ignore the original scalar angle from fin prop
+            if LiftScalarInput ~= nil then FinEnt:SetNWBool( "IgnoreRealScalarValue", true ) else
+                FinEnt:SetNWBool( "IgnoreRealScalarValue", false )
+            end
+            -- Tell Fin OS Brain to ignore the real pitch angle from fin prop
+            if AttackPitchAngleInput ~= nil then FinEnt:SetNWBool( "IgnoreRealPitchAttackAngle", true ) else
+                FinEnt:SetNWBool( "IgnoreRealPitchAttackAngle", false )
+            end
 
+            -- Send to Fin
+            if LiftScalarInput ~= nil then
+                FinEnt[ "FinOS_data" ][ "fin_os__Wiremod_InputValues" ][ "FinOS_LiftForceScalarValue_Wiremod" ] = LiftScalarInput
+            end
+            if AttackPitchAngleInput ~= nil then
+                FinEnt[ "FinOS_data" ][ "fin_os__Wiremod_InputValues" ][ "AttackAngle_Pitch_Wiremod" ] = AttackPitchAngleInput
             end
 
         end

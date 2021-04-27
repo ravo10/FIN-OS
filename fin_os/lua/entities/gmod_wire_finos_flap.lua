@@ -69,11 +69,13 @@ if WireToolSetup then
 
     function ENT:TriggerInput( iname, value )
 
+        local inputSrc = self.Inputs[ iname ].Src
+
         if ( iname == "Entity" and value and value:IsValid() ) then self.FlapEntity = value
         elseif ( iname == WireInputs[ 2 ] and value and isnumber( value ) ) then self.PitchAngle = value end
 
-        if ( iname == "Entity" and ( ( value and not value:IsValid() ) or value == nil ) ) then self.FlapEntity = nil
-        elseif ( iname == WireInputs[ 2 ] and value == 0 ) then self.PitchAngle = BaseTriOut[ 1 ] end
+        if ( not inputSrc and iname == "Entity" ) then self.FlapEntity = nil
+        elseif ( not inputSrc and iname == WireInputs[ 2 ] ) then self.PitchAngle = nil end
 
     end
 
@@ -142,12 +144,16 @@ if WireToolSetup then
             -- Input
             local AttackPitchAngleInput = self.PitchAngle
 
-            if FlapEnt[ "FinOS_data" ] and FlapEnt[ "FinOS_data" ][ "fin_os__EntPhysicsProperties" ] then
+            -- Tell Fin OS Brain to ignore the real pitch angle from flap prop
+            if AttackPitchAngleInput ~= nil then
                 
-                -- Send to Flap
-                FlapEnt[ "FinOS_data" ][ "fin_os__EntAngleProperties" ][ "AttackAngle_Pitch" ] = AttackPitchAngleInput
+                FlapEnt:SetNWBool( "IgnoreRealPitchAttackAngle", true )
 
-            end
+                -- Send to Flap
+                FlapEnt[ "FinOS_data" ][ "fin_os__Wiremod_InputValues" ][ "AttackAngle_Pitch_Wiremod" ] = AttackPitchAngleInput
+
+            else FlapEnt:SetNWBool( "IgnoreRealPitchAttackAngle", false ) end
+
         end
 
         -- Update globally

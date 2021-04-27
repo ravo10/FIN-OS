@@ -150,7 +150,7 @@ if SERVER then
         if (
 
             Data[ "FINOS_DUPLICATIONSSETTING_VERSION_CONTROL" ] == FINOS_DUPLICATIONSSETTING_VERSION_CONTROL and
-            Data[ "AREAPOINTSTABLE" ] and Data[ "AREAVECTORSTABLE" ] and Data[ "AREAACCEOTEDANGLEANDHITNORMALTABLE" ] and
+            Data[ "AREAPOINTSTABLE" ] and Data[ "AREAVECTORSTABLE" ] and Data[ "AREAACCEPTEDANGLEANDHITNORMALTABLE" ] and
             Data[ "ANGLEPROPERTIESTABLE" ] and Data[ "PHYSICSPROPERTIESSTABLE" ]
 
         ) then
@@ -162,9 +162,12 @@ if SERVER then
             -- **Don't need to add AREAPOINTSTABLE, AREAVECTORSTABLE, AREAVECTORSLINESPARAMETERTABLE and AREAPOINTCROSSINGLINESTABLE, since
             -- they will be calculated and added underneath virtually
 
-            FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal", Data[ "AREAACCEOTEDANGLEANDHITNORMALTABLE" ], nil, "ID12", true )
+            FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal", Data[ "AREAACCEPTEDANGLEANDHITNORMALTABLE" ], nil, "ID12", true )
             FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAngleProperties", Data[ "ANGLEPROPERTIESTABLE" ], nil, "ID6", true )
             FINOS_AddDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", Data[ "PHYSICSPROPERTIESSTABLE" ], nil, "ID7", true )
+
+            -- For duplication ( finding and setting the flap )
+            Entity[ "FinOS_data" ][ "fin_os_fin_has_a_flap" ] = Data[ "FIN_HAS_A_FLAP" ]
 
             -- Check if valid fin ( no crossing lines )
             local AREAPOINTSTABLE = Data[ "AREAPOINTSTABLE" ]
@@ -182,7 +185,7 @@ if SERVER then
                     anyVectorLinesCrossingOrAngleHitNormalNotOK = FINOS_SetAreaPointsForFin( {
 
                         Entity = Entity,
-                        HitNormal = Data[ "AREAACCEOTEDANGLEANDHITNORMALTABLE" ][ "firstPointSet_HitNormal" ],
+                        HitNormal = Data[ "AREAACCEPTEDANGLEANDHITNORMALTABLE" ][ "firstPointSet_HitNormal" ],
                         HitPos = Entity:LocalToWorld( v )
 
                     }, Player )
@@ -232,12 +235,26 @@ if SERVER then
 
             -- Error, tell the Plater that the fin was not added ( he has to add it again )
             errorMessage1 = "**An error occured while adding the FIN OS fin (maybe old version applied before). You'll have to re-apply a new fin manually again"
-            errorMessage2 = "An error occured while adding the FIN OS fin. You'll have to apply a new fin"
+            errorMessage2 = "Some static duplicator data has possibly changed since last version. We didn't get everything we need. You'll have to apply a new fin!"
 
         end
 
         if errorMessage1 then FINOS_AlertPlayer( errorMessage1, Player) end
         if errorMessage2 then FINOS_SendNotification( errorMessage2, FIN_OS_NOTIFY_ERROR, Player, 7 ) end
+
+    end )
+    duplicator.RegisterEntityModifier( "FinOS_Flap", function( Player, Entity, Data )
+
+        if Data[ "ANGLEPROPERTIESTABLE" ] then
+
+            FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAngleProperties", Data[ "ANGLEPROPERTIESTABLE" ], nil, "ID6_Flap", true )
+
+            -- Apply the angle ( important )
+            Entity:SetLocalAngles( Data[ "ANGLEPROPERTIESTABLE" ][ "BaseAngle" ] )
+
+            Entity[ "FinOS_data" ][ "fin_os_is_a_fin_flap" ] = Data[ "IS_A_FLAP" ]
+
+        end
 
     end )
 
@@ -921,20 +938,25 @@ function FINOS_AlertPlayer( string, player )
 end
 
 -- For calculating attack angles on air
-function FINOS_CalculateAttackAnglesDegreesFor_CL( ent )
+function FINOS_CalculateAttackAnglesDegreesFor_CL( ent, useWiremodInput ) 
 
     if not ent and not ent:IsValid() then return nil end
 
-	local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( ent, "fin_os__EntAngleProperties", "ID10" )
+    local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( ent, "fin_os__EntAngleProperties", "ID10" )
+    local ANGLEPROPERTIESTABLE_Wiremod
+    if useWiremodInput then ANGLEPROPERTIESTABLE_Wiremod = FINOS_GetDataToEntFinTable( ent, "fin_os__Wiremod_InputValues", "ID10_Wiremod" ) end
 
-	local ENT_MAIN_BASE_ANGLES = ANGLEPROPERTIESTABLE[ "BaseAngle" ]
-	local CURRENT_ENT_ANGLES = ent:GetAngles()
+    local ENT_MAIN_BASE_ANGLES = ANGLEPROPERTIESTABLE[ "BaseAngle" ]
+    local CURRENT_ENT_ANGLES = ent:GetAngles()
 
     if not ANGLEPROPERTIESTABLE[ "BaseAngle" ] then return nil end
 
+    local PitchAngles = ( CURRENT_ENT_ANGLES[ 1 ] - ENT_MAIN_BASE_ANGLES[ 1 ] )
+    if ANGLEPROPERTIESTABLE_Wiremod then PitchAngles = ANGLEPROPERTIESTABLE_Wiremod[ "AttackAngle_Pitch_Wiremod" ] end
+
 	local CURRENT_MAIN_ANGLES_OF_ATTACK = Angle(
 
-		( CURRENT_ENT_ANGLES[ 1 ] - ENT_MAIN_BASE_ANGLES[ 1 ] ),
+		PitchAngles,
 		( CURRENT_ENT_ANGLES[ 2 ] - ENT_MAIN_BASE_ANGLES[ 2 ] ),
 		( CURRENT_ENT_ANGLES[ 3 ] - ENT_MAIN_BASE_ANGLES[ 3 ] )
 
@@ -942,9 +964,10 @@ function FINOS_CalculateAttackAnglesDegreesFor_CL( ent )
 
 	local CURRENT_ANGLE_OF_ATTACK_ROLL = CURRENT_MAIN_ANGLES_OF_ATTACK[ 3 ]
 	local CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = math.Round( math.cos( math.rad(CURRENT_ANGLE_OF_ATTACK_ROLL) ) )
+    if useWiremodInput then CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = 1 end
 
     -- For props that can go above 90 degrees
-    if CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ] > 90 then
+    if not useWiremodInput and CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ] > 90 then
 
         CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ] = ( ( 180 - CURRENT_MAIN_ANGLES_OF_ATTACK[ 1 ] ) - 90 )
 
@@ -958,12 +981,12 @@ function FINOS_CalculateAttackAnglesDegreesFor_CL( ent )
 
 		CURRENT_ATTACK_ANGLE = CURRENT_ATTACK_ANGLE,
 		CURRENT_MAIN_ANGLES_OF_ATTACK = CURRENT_MAIN_ANGLES_OF_ATTACK,
-		CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS,
+		CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS
 
 	}
 
 end
-function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity, VelocityMetersPerSecond, AreaMeter, Scalar )
+function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity, VelocityMetersPerSecond, timeDeltaTime, AreaMeter, Scalar )
 
     if not ent or not ent:IsValid() or not AttackAnglesDegreesTable or not RhoMassDensity or not VelocityMetersPerSecond or not AreaMeter or not Scalar then
 
@@ -982,13 +1005,14 @@ function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity
     local CURRENT_ATTACK_ANGLE_DEGREES = math.deg( math.acos( math.sin( CURRENT_ATTACK_ANGLE_DEGREES_COSINUS ) ) )
     local CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS = AttackAnglesDegreesTable[ "CURRENT_ANGLE_OF_ATTACK_ROLL_COSINUS" ]
 
-    local CURRENT_MAIN_ANGLES_OF_ATTACK = AttackAnglesDegreesTable[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ]
+    -- local CURRENT_MAIN_ANGLES_OF_ATTACK = AttackAnglesDegreesTable[ "CURRENT_MAIN_ANGLES_OF_ATTACK" ]
 
     -- ** The LIFT Force [ Coefficient ] **
     local CURRENT_CL = 2 * math.pi * math.rad( CURRENT_ATTACK_ANGLE_DEGREES )
+    -- local g_CONSTANT_ACCELERTATION = 600 * 0.01635 -- 600 = default gravity. 600 * 0.01635 = 9.81
 
     -- ** The LIFT Force **
-    local CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = ( 0.5 * RhoMassDensity * math.pow( VelocityMetersPerSecond, 2 ) * AreaMeter )
+    local CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = ( 0.5 * RhoMassDensity * math.pow( VelocityMetersPerSecond, 2 ) * AreaMeter ) * 0.15071 -- <-- '* 0.15071' Makes is more realistic, if you use the equation F = ma
     local CURRENT_LIFT_FORCE_IN_NEWTONS = ( CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE * CURRENT_CL )
 
     -- ** The LIFT Force used IN-GAME **
@@ -1010,7 +1034,8 @@ function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity
     return {
 
         CURRENT_LIFT_FORCE_IN_NEWTONS = CURRENT_LIFT_FORCE_IN_NEWTONS,
-        CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED = CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED,
+        CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC = CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED,
+        CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED = CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED * 2,
         CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE
 
     }
@@ -1018,47 +1043,47 @@ function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity
 end
 
 -- Duplication settings for a fin
-function FINOS_WriteDuplicatorDataForEntity( Entity ) -- The new entity will have this data
+function FINOS_WriteDuplicatorDataForEntity( EntityPhysPropNotFinBrain ) -- The new entity will have this data
 
-    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID3" )
+    local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaPoints", "ID3" )
     --[[ IDs:
         vCPLFin_Area_Units = Int
         vCPLFin_Area_Foot = Int
         vCPLFin_Area_Meter = Int
         pointsUsed
      ]]
-    local AREAVECTORSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaVectors", "ID4" )
+    local AREAVECTORSTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaVectors", "ID4" )
     --[[ Array:
         Vector(x, y, z), Vector(x, y, z), Vector(x, y, z) ...
      ]]
-    local AREAVECTORSLINESPARAMETERTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaVectorLinesParameter", "ID20" )
+    local AREAVECTORSLINESPARAMETERTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaVectorLinesParameter", "ID20" )
     --[[ Array:
         equation1 = { x = Int, a = Int }
         equation2 = { y = Int, b = Int }
         equation3 = { z = Int, c = Int }
      ]]
-    local AREAPOINTCROSSINGLINESTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPointCrossingLines", "ID21" )
+    local AREAPOINTCROSSINGLINESTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaPointCrossingLines", "ID21" )
     --[[ Array:
         calculationResults = {
             t = Int
-           s = Int
-           LHSLocalCrossingPoint = Int
-           RHSLocalCrossingPoint = Int
-           crossingLines = true
+            s = Int
+            LHSLocalCrossingPoint = Int
+            RHSLocalCrossingPoint = Int
+            crossingLines = true
         }
      ]]
-    local AREAACCEOTEDANGLEANDHITNORMALTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal", "ID22" )
+    local AREAACCEPTEDANGLEANDHITNORMALTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaAcceptedAngleAndHitNormal", "ID22" )
     --[[ IDs:
         firstPointSet_Angles = Angles
         firstPointSet_HitNormal = Vector
      ]]
-    local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAngleProperties", "ID5" )
+    local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAngleProperties", "ID5" )
     --[[ IDs:
         BaseAngle = Angles
         AttackAngle_Pitch = Int
         AttackAngle_RollCosinus = Int
      ]]
-    local PHYSICSPROPERTIESSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", "ID6" )
+    local PHYSICSPROPERTIESSTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntPhysicsProperties", "ID6" )
     --[[ IDs:
         VelocityKmH = Int
         LiftForceNewtonsModified_beingUsed = Int
@@ -1075,13 +1100,34 @@ function FINOS_WriteDuplicatorDataForEntity( Entity ) -- The new entity will hav
         AREAVECTORSTABLE                            = AREAVECTORSTABLE,
         AREAVECTORSLINESPARAMETERTABLE              = AREAVECTORSLINESPARAMETERTABLE,
         AREAPOINTCROSSINGLINESTABLE                 = AREAPOINTCROSSINGLINESTABLE,
-        AREAACCEOTEDANGLEANDHITNORMALTABLE          = AREAACCEOTEDANGLEANDHITNORMALTABLE,
+        AREAACCEPTEDANGLEANDHITNORMALTABLE          = AREAACCEPTEDANGLEANDHITNORMALTABLE,
         ANGLEPROPERTIESTABLE                        = ANGLEPROPERTIESTABLE,
-        PHYSICSPROPERTIESSTABLE                     = PHYSICSPROPERTIESSTABLE
+        PHYSICSPROPERTIESSTABLE                     = PHYSICSPROPERTIESSTABLE,
+        FIN_HAS_A_FLAP                              = EntityPhysPropNotFinBrain[ "FinOS_data" ][ "fin_os_fin_has_a_flap" ]
 
     }
 
-    duplicator.StoreEntityModifier( Entity, "FinOS", Data )
+    duplicator.StoreEntityModifier( EntityPhysPropNotFinBrain, "FinOS", Data )
+
+end
+function FINOS_WriteDuplicatorDataForFlapEntity( EntityFlap ) -- The new entity will have this data
+
+    local ANGLEPROPERTIESTABLE = FINOS_GetDataToEntFinTable( EntityFlap, "fin_os__EntAngleProperties", "ID5_Flap" )
+    --[[ IDs:
+        BaseAngle = Angles
+        AttackAngle_Pitch = Int
+        AttackAngle_RollCosinus = Int
+     ]]
+
+    -- Create a new table to store in duplicator settings for the entity
+    local Data = {
+
+        ANGLEPROPERTIESTABLE    = ANGLEPROPERTIESTABLE,
+        IS_A_FLAP               = EntityFlap[ "FinOS_data" ][ "fin_os_is_a_fin_flap" ]
+
+    }
+
+    duplicator.StoreEntityModifier( EntityFlap, "FinOS_Flap", Data )
 
 end
 
@@ -1143,7 +1189,112 @@ function FINOS_AddFinWingEntity( ent, owner )
     owner:AddCount( "fin_os_brain", entFin )
     owner:AddCleanup( "fin_os_brain", entFin )
 
+    -- For Wiremod
+    FINOS_AddDataToEntFinTable( ent, "fin_os__Wiremod_InputValues", {}, nil, "ID0_Wiremod", true )
+
     if not prevFinOSBrainValid and not game.SinglePlayer() then owner:SetNWInt( "fin_os_ent_amount", owner:GetNWInt( "fin_os_ent_amount", 0 ) + 1 ) end
+
+end
+-- Fin's Flap ( optional )
+function FINOS_AddFlapEntity( finEntity, flapEntity )
+
+    if not ( finEntity and finEntity:IsValid() and flapEntity and flapEntity:IsValid() ) then return end
+
+    local currentEntAngle
+
+    -- Create the flap data structure ( same as the fin )
+    if (
+
+        (
+            flapEntity[ "FinOS_data" ] and
+            flapEntity[ "FinOS_data" ][ "fin_os__EntAngleProperties" ][ "BaseAngle" ] and not flapEntity[ "FinOS_data" ][ "fin_os__EntAngleProperties" ][ "BaseAngle" ]
+        ) or (
+            not flapEntity[ "FinOS_data" ] or ( flapEntity[ "FinOS_data" ] and not flapEntity[ "FinOS_data" ][ "fin_os__EntAngleProperties" ][ "BaseAngle" ] )
+        )
+
+    ) then
+
+        currentEntAngle = flapEntity:GetAngles()
+
+        FINOS_AddDataToEntFinTable( flapEntity, "fin_os__EntAngleProperties", {
+
+            BaseAngle = currentEntAngle
+
+        }, nil, "ID11c", true )
+
+    else currentEntAngle = flapEntity[ "FinOS_data" ][ "fin_os__EntAngleProperties" ][ "BaseAngle" ] end
+
+    -- For Wiremod
+    FINOS_AddDataToEntFinTable( flapEntity, "fin_os__Wiremod_InputValues", {}, nil, "ID1_Wiremod", true )
+
+    finEntity[ "FinOS_data" ][ "fin_os_fin_has_a_flap" ] = true -- For duplication
+    FINOS_WriteDuplicatorDataForEntity( finEntity )
+
+    flapEntity:SetNWBool( "fin_os_is_a_fin_flap", true )
+
+	flapEntity[ "FinOS_data" ][ "fin_os_is_a_fin_flap" ] = true -- For duplication
+    FINOS_WriteDuplicatorDataForFlapEntity( flapEntity )
+
+    -- Flap brain
+    local anyPrevFlapBrain = flapEntity:GetNWEntity( "fin_os_flap_brain" )
+    local entFlapBrain = anyPrevFlapBrain or nil
+
+    if ( anyPrevFlapBrain and not anyPrevFlapBrain:IsValid() ) or not anyPrevFlapBrain then
+
+        entFlapBrain = ents.Create( "fin_os_flap_brain" )
+
+        entFlapBrain:SetPos( flapEntity:LocalToWorld( flapEntity:OBBCenter() ) ) -- Endre til midten av arealet vektor ??
+        entFlapBrain:SetAngles( flapEntity:GetAngles() )
+
+        entFlapBrain:SetName( "fin_os_finWingBrain" )
+        entFlapBrain:SetParent( flapEntity )
+        entFlapBrain:SetOwner( finEntity:GetOwner() )
+        entFlapBrain:SetCreator( finEntity:GetOwner() )
+
+        -- Spawn
+        entFlapBrain:Spawn()
+        entFlapBrain:Activate()
+
+    end
+
+    flapEntity:SetNWEntity( "fin_os_flap_brain", entFlapBrain )
+    flapEntity:SetNWEntity( "fin_os_flap_finParentEntity", finEntity )
+
+    finEntity:SetNWEntity( "fin_os_flapEntity", flapEntity )
+
+    return currentEntAngle
+
+end
+-- Remove Flap from Fin
+function FINOS_RemoveFlapFromFin( flapEntity )
+
+    flapEntity[ "FinOS_data" ][ "fin_os_is_a_fin_flap" ] = false -- For duplication
+    FINOS_WriteDuplicatorDataForFlapEntity( flapEntity )
+
+    -- Remove flap from fin
+    flapEntity:SetNWBool( "fin_os_is_a_fin_flap", false )
+    local FIN_FLAP_FINPARENTENT = flapEntity:GetNWEntity( "fin_os_flap_finParentEntity", nil )
+
+    if FIN_FLAP_FINPARENTENT and FIN_FLAP_FINPARENTENT:IsValid() and FIN_FLAP_FINPARENTENT[ "FinOS_data" ] then
+
+        FIN_FLAP_FINPARENTENT[ "FinOS_data" ][ "fin_os_fin_has_a_flap" ] = false -- For duplication
+
+        -- Update Fin duplication settings
+        FINOS_WriteDuplicatorDataForEntity( FIN_FLAP_FINPARENTENT )
+
+    end
+
+    FIN_FLAP_FINPARENTENT:SetNWEntity( "fin_os_flapEntity", nil )
+    flapEntity:SetNWEntity( "fin_os_flap_finParentEntity", nil )
+
+    FINOS_AddDataToEntFinTable( flapEntity, "fin_os__EntAngleProperties", nil )
+
+    flapEntity[ "FinOS_data" ] = nil
+
+    local flapBrain = flapEntity:GetNWEntity( "fin_os_flap_brain" )
+    if flapBrain and flapBrain:IsValid() then flapBrain:Remove() end
+
+    flapEntity:SetNWEntity( "fin_os_flap_brain", nil )
 
 end
 -- Remove Fin from Entity
@@ -1186,7 +1337,7 @@ function FINOS_RemoveFinAndDataFromEntity( ent, owner, onlyBasicCleaning, ignore
     end
 
     -- Remove fin
-    if ent:GetNWEntity( "fin_os_flapEntity" ):IsValid() then RemoveFlapFromFin( ent:GetNWEntity( "fin_os_flapEntity" ) ) end
+    if ent:GetNWEntity( "fin_os_flapEntity" ):IsValid() then FINOS_RemoveFlapFromFin( ent:GetNWEntity( "fin_os_flapEntity" ) ) end
 
     if not game.SinglePlayer() then owner:SetNWInt( "fin_os_ent_amount", owner:GetNWInt( "fin_os_ent_amount", 1 ) - 1 ) end
 

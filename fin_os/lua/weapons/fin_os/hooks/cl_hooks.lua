@@ -5,7 +5,9 @@
 -- ///////////////////////////////////////////////////////////////////////////////
 
 -- Check if fin is correct way up
-local function WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle )
+local function WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle, finOrFlapEntity )
+
+    if finOrFlapEntity and finOrFlapEntity:IsValid() and finOrFlapEntity:GetNWBool( "IgnoreRealPitchAttackAngle" ) then return "-" end
 
     -- if ( rollCosinusFraction ~= 0 or math.abs( pitchAttackAngle ) ~= 0 ) and math.abs( pitchAttackAngle ) < 90 then return "Yes" else return "No" end
     if rollCosinusFraction > -1 and math.abs( pitchAttackAngle ) < 90 then return "Yes" else return "No" end
@@ -69,7 +71,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
             if
                 ( FinSettingsTable[ "AttackAngle_Pitch" ] and FinSettingsTable[ "AttackAngle_RollCosinus" ] ) and
-                ( FinPhysicsPropertiesTable[ "VelocityKmH" ] and FinPhysicsPropertiesTable[ "LiftForceNewtonsModified_beingUsed" ] and FinPhysicsPropertiesTable[ "LiftForceNewtonsNotModified" ] and FinPhysicsPropertiesTable[ "AreaMeterSquared" ] )
+                ( FinPhysicsPropertiesTable[ "VelocityKmH" ] and FinPhysicsPropertiesTable[ "LiftForceNewtonsModified_realistic" ] and FinPhysicsPropertiesTable[ "LiftForceNewtonsNotModified" ] and FinPhysicsPropertiesTable[ "AreaMeterSquared" ] )
             then
 
                 -- Show important values to user on screen
@@ -77,7 +79,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 local rollCosinusFraction = FinSettingsTable[ "AttackAngle_RollCosinus" ]
 
                 local speed = math.Round( FinPhysicsPropertiesTable[ "VelocityKmH" ] )
-                local force_lift = math.Round( FinPhysicsPropertiesTable[ "LiftForceNewtonsModified_beingUsed" ] )
+                local force_lift = math.Round( FinPhysicsPropertiesTable[ "LiftForceNewtonsModified_realistic" ] )
                 local area_meter_squared = math.Round( FinPhysicsPropertiesTable[ "AreaMeterSquared" ], 2 )
                 local liftForceScalarValue = FinPhysicsPropertiesTable[ "FinOS_LiftForceScalarValue" ]
 
@@ -165,7 +167,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 
                 draw.DrawText(
 
-                    "Wing correct way up?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
+                    "Wing correct way up?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle, Entity ),
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 ),
@@ -212,6 +214,21 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 )
 
+                if EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() ~= "fin_os" then
+
+                    draw.DrawText(
+
+                        "FIN OS",
+                        "Trebuchet24",
+                        ( backgroundPosX + 232 ),
+                        ( backgroundPosY - 13 ),
+                        Color( 247, 245, 162, 220 ),
+                        TEXT_ALIGN_LEFT
+
+                    )
+
+                end
+
                 draw.DrawText(
 
                     "Air Attack Angle: " .. pitchAttackAngle.. "˚ (important)",
@@ -235,7 +252,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 
                 draw.DrawText(
 
-                    "Flap correct way up?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
+                    "Flap correct way up?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle, Entity ),
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 ),
@@ -330,7 +347,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             local rollCosinusFraction = PHYSICSPROPERTIESSTABLE[ "AttackAngle_RollCosinus_FIN" ]
 
             local speed = math.Round( PHYSICSPROPERTIESSTABLE[ "VelocityKmH" ] )
-            local force_lift = math.Round( PHYSICSPROPERTIESSTABLE[ "LiftForceNewtonsModified_beingUsed" ] )
+            local force_lift = math.Round( PHYSICSPROPERTIESSTABLE[ "LiftForceNewtonsModified_realistic" ] )
             local area_meter_squared = math.Round( PHYSICSPROPERTIESSTABLE[ "AreaMeterSquared" ], 2 )
 
             draw.RoundedBox( 8,
@@ -357,7 +374,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             )
             draw.DrawText(
 
-                "U up ?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle ),
+                "U up ?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle, PHYSICSPROPERTIESSTABLE["FinBeingTracked"] ),
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 + 12 ),
@@ -523,7 +540,7 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
             end
 
-            if EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "fin_os" and not isEAndShiftUsedToRotate then
+            if EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "fin_os" and not isEAndShiftUsedToRotate and not Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
                 local text = [[Rotate me with "Shift" (｀_´)ゞ]]
                 local font = "GModWorldtip"
@@ -559,6 +576,40 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
     end
 
     return false
+
+end )
+
+hook.Add( "PreDrawHalos", "fin_os:PreDrawHalos", function ()
+
+    local Player = LocalPlayer()
+
+    if EntTruty( Player ) then
+
+        local tr = Player:GetEyeTrace()
+
+        local Entity = tr.Entity
+
+        if (
+        
+            EntTruty( Entity ) and
+            ( Entity:GetNWBool( "fin_os_active" ) or Entity:GetNWBool( "fin_os_is_a_fin_flap" ) ) and
+            EntTruty( Player ) and
+            EntTruty( Player:GetActiveWeapon() ) and
+            Player:GetActiveWeapon():GetClass() == "fin_os"
+
+        ) then
+
+            local c = Color(255, 238, 0)
+
+            -- Draw halo around
+            local counterMs = ( CurTime() % 1 ) * 3
+            local counterSec = math.floor( counterMs + 0.01 )
+
+            halo.Add( { Entity }, Color( 255 * counterSec, 238 * counterMs, 0, 250 ), 1, 1, 1, true, false )
+
+        end
+
+    end
 
 end )
 
