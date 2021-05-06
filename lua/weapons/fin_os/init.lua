@@ -68,6 +68,9 @@ CreateConVar(
 
 )
 
+CreateClientConVar( "finos_cl_enableHoverRingBall_fin", "1", true, false )
+CreateClientConVar( "finos_cl_enableHoverRingBall_flap", "1", true, false )
+
 -- Global variables
 if SERVER then
 

@@ -40,6 +40,9 @@ hook.Add( "KeyRelease", "fin_os:KeyRelease", function( pl, key ) DisabledScrolli
 
 hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
+    -- For if in the future adding some more text in main window, and needing to move other elements relativly
+    local someExtra001 = 14
+
     local Player = LocalPlayer()
 
     if EntTruty( Player ) then
@@ -84,7 +87,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 local liftForceScalarValue = FinPhysicsPropertiesTable[ "FinOS_LiftForceScalarValue" ]
 
                 local backgroundPosX = ( ScrW() - 300 - 20 )
-                local backgroundPosY = 250
+                local backgroundPosY = 250 + someExtra001
 
                 local textColor = Color( 255, 255, 255, 255 )
                 local textType = "HudSelectionText"
@@ -200,7 +203,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 local rollCosinusFraction = FinSettingsTable[ "AttackAngle_RollCosinus" ]
 
                 local backgroundPosX = ( ScrW() - 300 - 20 )
-                local backgroundPosY = 250
+                local backgroundPosY = 250 + someExtra001
 
                 local textColor = Color( 255, 255, 255, 255 )
 
@@ -277,7 +280,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 backgroundPosX,
                 backgroundPosY - 8,
                 300,
-                156,
+                156 + someExtra001,
                 Color( 247, 245, 162, 220 )
 
             )
@@ -291,6 +294,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     Reload to remove fin from prop
                     
                     "E" + Scroll to scale lift force
+                    "E" + Middle Mouse Button for Settings Panel
                 ]],
                 "GModToolHelp",
                 ( backgroundPosX - 97 + 20 ),
@@ -314,7 +318,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 "FIN OS",
                 "Trebuchet24",
                 ( backgroundPosX + 60 ),
-                ( backgroundPosY - 45 + 14 ),
+                ( backgroundPosY - 45 + someExtra001 ),
                 textColor,
                 TEXT_ALIGN_LEFT
 
@@ -340,7 +344,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             local width = 150
 
             local backgroundPosX = ( ScrW() - width - 20 )
-            local backgroundPosY = ( 250 + 210 )
+            local backgroundPosY = ( 250 + 210 ) + someExtra001
 
             local pitchAttackAngle = math.Round( PHYSICSPROPERTIESSTABLE[ "AttackAngle_Pitch_FIN" ] )
             local pitchAttackAngle_FLAP = math.Round( PHYSICSPROPERTIESSTABLE[ "AttackAngle_Pitch_FLAP" ] )
@@ -631,4 +635,79 @@ hook.Add( "EntityEmitSound", "finos:EntityEmitSound", function( soundDataTable )
         
     end
 	
+end )
+
+-- Settings Panel
+local middleMouseButtonDownOnce = false
+local middleMouseButtonDownOnce2 = false
+
+local openSettingsPanel
+local settingsPanelWidth = 400
+local settingsPanelheight = 200
+local lastSavedPanelPositions = { ScrW() / 2 - settingsPanelWidth / 2, ScrH() / 2 - settingsPanelheight / 2 }
+
+local function createUserSettingsPanel()
+
+    local DermaPanel = vgui.Create( "DFrame" )
+
+    DermaPanel:SetPos( lastSavedPanelPositions[ 1 ], lastSavedPanelPositions[ 2 ] )
+    DermaPanel:SetSize( settingsPanelWidth, settingsPanelheight )
+    DermaPanel:SetTitle( "Fin Open Source (FIN OS) Tool - Settings Panel [CLIENT]" )
+    DermaPanel:SetDraggable( true )
+    DermaPanel:MakePopup()
+
+    function DermaPanel:OnClose()
+
+        local x, y = DermaPanel:GetPos()
+
+        -- Save the last position
+        lastSavedPanelPositions = { x, y }
+
+        if DermaPanel and DermaPanel:IsValid() then DermaPanel:Remove() end
+
+    end
+
+    -- Hover ring ball
+    local CheckboxHoverRingBallFin = vgui.Create( "DCheckBoxLabel", DermaPanel )
+    CheckboxHoverRingBallFin:SetConVar( "finos_cl_enableHoverRingBall_fin" )
+    CheckboxHoverRingBallFin:SetText( "Hover Ring Ball → FIN" )
+    CheckboxHoverRingBallFin:SetPos( 10, 30 )
+    CheckboxHoverRingBallFin:SizeToContents()
+    
+    local CheckboxHoverRingBallFlap = vgui.Create( "DCheckBoxLabel", DermaPanel )
+    CheckboxHoverRingBallFlap:SetConVar( "finos_cl_enableHoverRingBall_flap" )
+    CheckboxHoverRingBallFlap:SetText( "Hover Ring Ball → FLAP" )
+    CheckboxHoverRingBallFlap:SetPos( 10, 30 + 20 )
+    CheckboxHoverRingBallFlap:SizeToContents()
+
+end
+
+hook.Add( "InputMouseApply", "fin_os:InputMouseApply", function( cmd, x, y, ang )
+
+    if EntTruty( LocalPlayer() ) and LocalPlayer():KeyDown( IN_USE ) then
+
+        local middleMouseButtonDown = input.IsMouseDown( MOUSE_MIDDLE )
+
+        -- If button is off ONCE
+        if not middleMouseButtonDown and not middleMouseButtonDownOnce and middleMouseButtonDownOnce2 then end
+
+        if middleMouseButtonDown and not middleMouseButtonDownOnce and not middleMouseButtonDownOnce2 then middleMouseButtonDownOnce = true middleMouseButtonDownOnce2 = true end
+        if not middleMouseButtonDown and not middleMouseButtonDownOnce then middleMouseButtonDownOnce2 = false end
+        
+        -- If button is on ONCE
+        if middleMouseButtonDownOnce then
+
+            middleMouseButtonDownOnce = false
+
+            -- Open panel
+            if EntTruty( LocalPlayer() ) and EntTruty( LocalPlayer():GetActiveWeapon() ) and LocalPlayer():GetActiveWeapon():GetClass() == "fin_os" then
+
+                createUserSettingsPanel()
+
+            end
+
+        end
+
+    end
+
 end )

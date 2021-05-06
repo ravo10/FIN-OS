@@ -19,16 +19,24 @@ function SWEP:SecondaryAttack()
             
             FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", nil, OWNER )
 
+            FINOS_SendNotification( "Not tracking this Fin", FIN_OS_NOTIFY_GENERIC, OWNER, 2.5 )
+
         else
 
             OWNER:SetNWEntity( "fin_os_tracked_fin", nextFinWingEntity )
 
             FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", nil, OWNER )
 
+            FINOS_SendNotification( "Tracking this Fin", FIN_OS_NOTIFY_GENERIC, OWNER, 2.5 )
+
         end
 
         self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
         return
+
+    elseif Entity and Entity:IsValid() then
+
+        FINOS_SendNotification( "You can only track a FIN OS Fin!", FIN_OS_NOTIFY_ERROR, OWNER, 1.5 )
 
     end
 

@@ -14,6 +14,7 @@
 * **Right-Click to add** fin to *tracked fin table*
 * **Reload to remove** fin/flap from prop
 * **( IN_USE + SCROLL_WHEEL ) to increase** the scalar value. Look at the fin you want to scale up/down
+* **( IN_USE + MIDDLE_MOUSE ) to open** the client settings panel
 
 ### How it works:
 * It uses **real physics** to calculate lift from the center of the prop, and real life formula for calculating lift: *Force[LIFT] = .5 * rho[AIR] * Velocity[m/s]^2 * Area[m^2] * C[L - angle of attack]*
@@ -27,11 +28,14 @@
 * Supports Wiremod input/output ( *Physics => FIN OS Tool* )
 
 ### Console Variables
-* ```**finos_maxfin_os_ent** ( def. = 20 ) [ FCVAR_PROTECTED ]``` - Amount of Fin OS fin's possible for each Player to spawn ( only for multiplayer ).
-* ```**finos_rhodensistyfluidvalue** ( def. = 1.29 ) [ FCVAR_PROTECTED ]``` - Mass density ( rho ) that will be applied to Fin OS fin.
-* ```**finos_maxscalarvalue** ( def. = 69 ) [ FCVAR_PROTECTED ]``` - Maximum scalar value a player can apply to a Fin OS fin.
-* ```**finos_disablestrictmode** ( def. = 0 ) [ FCVAR_PROTECTED ]``` - Disables checking for angle of prop and crossing vector lines, if you just want to be joking around ( other servers might not accept the duplicate tho ).
-* ```**finos_disableprintchatmessages** ( def. = 1 ) [ FCVAR_PROTECTED ]``` - Disables printing messages in chat ( only legacy ).
+* ```finos_maxfin_os_ent ( def. = 20 ) [ FCVAR_PROTECTED ]``` - Amount of Fin OS fin's possible for each Player to spawn ( only for multiplayer ).
+* ```finos_rhodensistyfluidvalue ( def. = 1.29 ) [ FCVAR_PROTECTED ]``` - Mass density ( rho ) that will be applied to Fin OS fin.
+* ```finos_maxscalarvalue ( def. = 69 ) [ FCVAR_PROTECTED ]``` - Maximum scalar value a player can apply to a Fin OS fin.
+* ```finos_disablestrictmode ( def. = 0 ) [ FCVAR_PROTECTED ]``` - Disables checking for angle of prop and crossing vector lines, if you just want to be joking around ( other servers might not accept the duplicate tho ).
+* ```finos_disableprintchatmessages ( def. = 1 ) [ FCVAR_PROTECTED ]``` - Disables printing messages in chat ( only legacy ).
+
+* ```finos_cl_enableHoverRingBall_fin ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the markers for a fin.
+* ```finos_cl_enableHoverRingBall_flap ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the markers for a flap.
 
 ## @todo
 - Make a custom world model for the fin tool SWEP
