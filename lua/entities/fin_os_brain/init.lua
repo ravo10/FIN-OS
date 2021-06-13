@@ -58,7 +58,7 @@ function ENT:OnRemove()
 end
 
 -- Apply Force Newton
-function ENT:FINOS_ApplyForceNewton( Entity, Force, posStart, posEnd, allAxis, extraZAxis, zAxisUpwardsUnit, ISWIND, WINDPROPERTIESTABLE )
+function ENT:FINOS_ApplyForceNewton( Entity, Force, posStart, posEnd, applyForceToStartAlso, allAxis, extraZAxis, zAxisUpwardsUnit, ISWIND, WINDPROPERTIESTABLE )
 
 	zAxisUpwardsUnit = zAxisUpwardsUnit or 0 --[[ 0 - 1 is best; like a unit vector ( normalized vector ) ]]
 
@@ -112,17 +112,16 @@ function ENT:FINOS_ApplyForceNewton( Entity, Force, posStart, posEnd, allAxis, e
 
 	end
 
-	local pushPosition = posEnd
-
 	-- Apply
-	Entity:GetPhysicsObject():ApplyForceOffset( pushVector, pushPosition )
+	if applyForceToStartAlso then Entity:GetPhysicsObject():ApplyForceOffset( pushVector, posStart ) end
+	Entity:GetPhysicsObject():ApplyForceOffset( pushVector, posEnd )
 
 	return FINALFORCE
 
 end
 
 -- Apply WIND
-function ENT:FINOS_ApplyWind( entProp, FORWARDDIRECTIONPOINTSTABLE, CURRENT_AREA_METER, WINDPROPERTIESTABLE )
+function ENT:FINOS_ApplyWind( entProp, FORWARDDIRECTIONPOINTSTABLE, CURRENT_AREA_METER, WINDPROPERTIESTABLE, useThisForceInstead )
 
 	local entPropPhysObject			= entProp:GetPhysicsObject()
 	local ForwardDirectionPoints	= FORWARDDIRECTIONPOINTSTABLE[ "ForwardDirectionPoints" ]
@@ -139,11 +138,11 @@ function ENT:FINOS_ApplyWind( entProp, FORWARDDIRECTIONPOINTSTABLE, CURRENT_AREA
 	local maxWindScale = WINDPROPERTIESTABLE[ "MaxWindScale" ]
 
 	--[[ From: -300000 - 300000 ( settings panel ) [ the server controls the max amount allowed ( def. 300 => ( -300 - 300 ) ) ] ]]
-	local WINDFORCEPERMETERSQUARED = ( WINDPROPERTIESTABLE[ "ForcePerSquareMeterArea" ] * CURRENT_AREA_METER )
+	local WINDFORCEPERMETERSQUARED = ( useThisForceInstead or ( WINDPROPERTIESTABLE[ "ForcePerSquareMeterArea" ] * CURRENT_AREA_METER ) )
 	local WINDSCALE = math.Rand( minWindScale, maxWindScale )
 
 	-- Apply WIND
-	return self:FINOS_ApplyForceNewton( entProp, WINDFORCEPERMETERSQUARED, posStart, posEnd, WILDWIND, THERMALWINDLIFT, WINDSCALE, true, WINDPROPERTIESTABLE )
+	return self:FINOS_ApplyForceNewton( entProp, ( WINDFORCEPERMETERSQUARED / 2 --[[ Because pushing at two points ]] ), posStart, posEnd, true, WILDWIND, THERMALWINDLIFT, WINDSCALE, true, WINDPROPERTIESTABLE )
 
 end
 
@@ -296,13 +295,15 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			local posStart = entFinParentProp:LocalToWorld( FORWARDDIRECTIONPOINTSTABLE[ "ForwardDirectionPoints" ][ 1 ] )
 			local posEnd = entFinParentProp:LocalToWorld( FORWARDDIRECTIONPOINTSTABLE[ "ForwardDirectionPoints" ][ 2 ] )
 
-			self:FINOS_ApplyForceNewton( entFinParentProp, ( CURRENT_DRAG_IN_NEWTONS__FIN * -1 ), posStart, posEnd, false, false, nil, false )
+			self:FINOS_ApplyForceNewton( entFinParentProp, ( ( CURRENT_DRAG_IN_NEWTONS__FIN / 2 --[[ Because pushing at two points ]] ) * -1 ), posStart, posEnd, true, false, false, nil, false )
 
 			-- ///////////////////////////////////////////////////////////////////////////////
 			-- WIND WIND WIND WIND WIND WIND WIND WIND WIND WIND WIND WIND WIND WIND WIND WIND
 			-- ///////////////////////////////////////////////////////////////////////////////
-			local WINDPRODUCEDNEWTONSFORAREA = 0 if WINDPROPERTIESTABLE[ "EnableWind" ] == 1 then
-				WINDPRODUCEDNEWTONSFORAREA = self:FINOS_ApplyWind( entFinParentProp, FORWARDDIRECTIONPOINTSTABLE, CURRENT_AREA_METER, WINDPROPERTIESTABLE )
+			local WINDPRODUCEDNEWTONSFORAREA = 0 if WINDPROPERTIESTABLE and WINDPROPERTIESTABLE[ "EnableWind" ] == 1 then
+				WireModWindForce = FINOS_GetDataToEntFinTable( entFinParentProp, "fin_os__Wiremod_InputValues", "ID35_WiremodWind" )[ "WindAmountNewtonsForArea_Wiremod" ]
+
+				WINDPRODUCEDNEWTONSFORAREA = self:FINOS_ApplyWind( entFinParentProp, FORWARDDIRECTIONPOINTSTABLE, CURRENT_AREA_METER, WINDPROPERTIESTABLE, WireModWindForce )
 			end
 
 			-- ///////////////////////////////////////////////////////////////////////////////
@@ -397,7 +398,9 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 							LiftForceNewtonsModified_beingUsed	= THEACTUALTOTALLIFTFORCEBEINGUSED,
 							LiftForceNewtonsNotModified			= ( CURRENT_LIFT_FORCE_IN_NEWTONS__FIN + CURRENT_LIFT_FORCE_IN_NEWTONS__FLAP ),
 							DragForceNewtons					= CURRENT_DRAG_IN_NEWTONS__FIN,
-							AreaMeterSquared					= CURRENT_AREA_METER
+							AreaMeterSquared					= CURRENT_AREA_METER,
+							FINOS_WindAmountNewtonsForArea		= WINDPRODUCEDNEWTONSFORAREA,
+							EnableWind							= WINDPROPERTIESTABLE[ "EnableWind" ]
 			
 						}, OWNER, "ID3", true )
 
@@ -410,16 +413,18 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 			-- Store, so it can be viewed for a Wire Output if needed
 			FINOS_AddDataToEntFinTable( entFinParentProp, "fin_os__WireOutputData_FIN", {
 
-				FIN_FinBeingTracked		= entBeingTracked,
-				FIN_AttackAngle_Pitch	= FINATTACKANGLE,
-				FIN_VelocityKmH			= CURRENT_VELOCITY_KmHour,
-				FIN_VelocityMpH			= CURRENT_VELOCITY_MeterSecond,
-				FIN_VelocityMps			= CURRENT_VELOCITY_MilesPerHour,
-				FIN_LiftForceNewtons	= CURRENT_LIFT_IN_NEWTONS__FIN,
-				FIN_DragForceNewtons	= CURRENT_DRAG_IN_NEWTONS__FIN,
-				FIN_AreaMeterSquared	= CURRENT_AREA_METER,
-				FIN_AreaInchesSquared	= CURRENT_AREA_INCHES,
-				FIN_Scalar				= SCALAR,
+				FIN_FinBeingTracked			= entBeingTracked,
+				FIN_AttackAngle_Pitch		= FINATTACKANGLE,
+				FIN_VelocityKmH				= CURRENT_VELOCITY_KmHour,
+				FIN_VelocityMpH				= CURRENT_VELOCITY_MeterSecond,
+				FIN_VelocityMps				= CURRENT_VELOCITY_MilesPerHour,
+				FIN_LiftForceNewtons		= CURRENT_LIFT_IN_NEWTONS__FIN,
+				FIN_DragForceNewtons		= CURRENT_DRAG_IN_NEWTONS__FIN,
+				FIN_WindEnabled				= WINDPROPERTIESTABLE[ "EnableWind" ],
+				FIN_WindAppliedForceNewtons	= WINDPRODUCEDNEWTONSFORAREA,
+				FIN_AreaMeterSquared		= CURRENT_AREA_METER,
+				FIN_AreaInchesSquared		= CURRENT_AREA_INCHES,
+				FIN_Scalar					= SCALAR,
 
 			}, nil, "ID WireOutput001", true )
 

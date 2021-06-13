@@ -29,41 +29,36 @@ AddCSLuaFile( "reload.lua" )
 -- CONSOLE VARIABLES
 CreateConVar(
 
-    "finos_maxfin_os_ent",
-    20,
-    FCVAR_PROTECTED,
+    "finos_maxfin_os_ent", 20,
+    bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ),
     "Change the maximum allowed Fin OS fin's a Player can have at once."
 
 )
 CreateConVar(
 
-    "finos_rhodensistyfluidvalue",
-    1.29,
-    FCVAR_PROTECTED,
+    "finos_rhodensistyfluidvalue", 1.29,
+    bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ),
     "Mass density ( rho ) that will be applied to FIN OS fin."
 
 )
 CreateConVar(
 
-    "finos_maxscalarvalue",
-    69,
-    FCVAR_PROTECTED,
+    "finos_maxscalarvalue", 69,
+    bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ),
     "Maximum scalar value a player can apply to a FIN OS fin."
 
 )
 CreateConVar(
 
-    "finos_disablestrictmode",
-    0,
-    FCVAR_PROTECTED,
+    "finos_disablestrictmode", 0,
+    bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ),
     "0: Enables strict mode\n1: Disables checking for angle of prop and crossing vector lines, if you just want to f*uck around ( other servers might not accept the duplicate tho )"
 
 )
 CreateConVar(
 
-    "finos_disableprintchatmessages",
-    1,
-    FCVAR_PROTECTED,
+    "finos_disableprintchatmessages", 1,
+    bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ),
     "Disables printing messages in chat ( only legacy )"
 
 )
@@ -76,25 +71,29 @@ CreateClientConVar( "finos_cl_enableForwardDirectionArrow", "1", true, false )
 CreateClientConVar( "finos_cl_gridSizeX", "9", true, false ) --[[ FLOAT ]]
 CreateClientConVar( "finos_cl_gridSizeY", "9", true, false ) --[[ FLOAT ]]
 
+CreateClientConVar( "finos_cl_gridColorR", "13", true, false ) --[[ INT ]]
+CreateClientConVar( "finos_cl_gridColorG", "146", true, false ) --[[ INT ]]
+CreateClientConVar( "finos_cl_gridColorB", "241", true, false ) --[[ INT ]]
+
 -- WIND
-CreateConVar( "finos_wind_MaxForcePerSquareMeterAreaAllowed", 1000, FCVAR_PROTECTED, "Max Force Per. Square Meter For Area Allowed." )
-CreateConVar( "finos_wind_MinWindScaleAllowed", 0, FCVAR_PROTECTED, "Min. Wind Scale Allowed." )
-CreateConVar( "finos_wind_MaxWindScaleAllowed", 1, FCVAR_PROTECTED, "Max. Wind Scale Allowed." )
-CreateConVar( "finos_wind_MinWildWindScaleAllowed", 1, FCVAR_PROTECTED, "Min. Wild Wind Scale Allowed." )
-CreateConVar( "finos_wind_MaxWildWindScaleAllowed", 6, FCVAR_PROTECTED, "Max. Wild Wind Scale Allowed." )
-CreateConVar( "finos_wind_MaxActivateThermalWindScaleAllowed", 200, FCVAR_PROTECTED, "Max. Thermal Lift Wind Scale Allowed." )
+CreateConVar( "finos_wind_maxForcePerSquareMeterAreaAllowed", 6000, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Max Force Per. Square Meter For Area Allowed." )
+CreateConVar( "finos_wind_minWindScaleAllowed", 0, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Min. Wind Scale Allowed." )
+CreateConVar( "finos_wind_maxWindScaleAllowed", 1, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Max. Wind Scale Allowed." )
+CreateConVar( "finos_wind_minWildWindScaleAllowed", 0.1, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Min. Wild Wind Scale Allowed." )
+CreateConVar( "finos_wind_maxWildWindScaleAllowed", 6, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Max. Wild Wind Scale Allowed." )
+CreateConVar( "finos_wind_maxActivateThermalWindScaleAllowed", 200, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Max. Thermal Lift Wind Scale Allowed." )
 
-CreateClientConVar( "finos_cl_wind_EnableWind", "0", true, true )
-CreateClientConVar( "finos_cl_wind_ForcePerSquareMeterArea", "300", true, true ) --[[ FLOAT ]]
-CreateClientConVar( "finos_cl_wind_MinWindScale", "0.4", true, true ) --[[ FLOAT ]]
-CreateClientConVar( "finos_cl_wind_MaxWindScale", "0.8", true, true ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_enableWind", "0", true, false )
+CreateClientConVar( "finos_cl_wind_forcePerSquareMeterArea", "300", true, false ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_minWindScale", "0.4", true, false ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_maxWindScale", "0.8", true, false ) --[[ FLOAT ]]
 
-CreateClientConVar( "finos_cl_wind_ActivateWildWind", "0", true, true )
-CreateClientConVar( "finos_cl_wind_MinWildWindScale", "1", true, true ) --[[ FLOAT ]]
-CreateClientConVar( "finos_cl_wind_MaxWildWindScale", "1.13", true, true ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_activateWildWind", "0", true, false )
+CreateClientConVar( "finos_cl_wind_minWildWindScale", "1", true, false ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_maxWildWindScale", "1.13", true, false ) --[[ FLOAT ]]
 
-CreateClientConVar( "finos_cl_wind_ActivateThermalWind", "0", true, true )
-CreateClientConVar( "finos_cl_wind_MaxThermalLiftWindScale", "36", true, true ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_activateThermalWind", "0", true, false )
+CreateClientConVar( "finos_cl_wind_maxThermalLiftWindScale", "36", true, false ) --[[ FLOAT ]]
 
 -- Global variables
 if SERVER then
@@ -1038,7 +1037,7 @@ function FINOS_AlertPlayer( string, player )
 end
 
 -- For calculating attack angles on air
-function FINOS_CalculateAttackAnglesDegreesFor_CL( ent, useWiremodInput ) 
+function FINOS_CalculateAttackAnglesDegreesFor_CL( ent, useWiremodInput )
 
     if not ent and not ent:IsValid() then return nil end
 
@@ -1312,8 +1311,6 @@ function FINOS_AddFinWingEntity( ent, owner )
 
     ent:SetNWBool( "fin_os_active", true )
 
-    FINOS_WriteDuplicatorDataForEntity( ent )
-
     owner:AddCount( "fin_os_brain", entFin )
     owner:AddCleanup( "fin_os_brain", entFin )
 
@@ -1321,21 +1318,38 @@ function FINOS_AddFinWingEntity( ent, owner )
     FINOS_AddDataToEntFinTable( ent, "fin_os__Wiremod_InputValues", {}, nil, "ID0_Wiremod", true )
 
     -- For Wind
+    local FinWindPropertiesTable = FINOS_GetDataToEntFinTable( ent, "fin_os__EntWindProperties", "ID15.Wind" )
+
+    local EnableWind = FinWindPropertiesTable[ "EnableWind" ]
+    local ForcePerSquareMeterArea = FinWindPropertiesTable[ "ForcePerSquareMeterArea" ]
+    local MinWindScale = FinWindPropertiesTable[ "MinWindScale" ]
+    local MaxWindScale = FinWindPropertiesTable[ "MaxWindScale" ]
+
+    local ActivateWildWind = FinWindPropertiesTable[ "ActivateWildWind" ]
+    local MinWildWindScale = FinWindPropertiesTable[ "MinWildWindScale" ]
+    local MaxWildWindScale = FinWindPropertiesTable[ "MaxWildWindScale" ]
+
+    local ActivateThermalWind = FinWindPropertiesTable[ "ActivateThermalWind" ]
+    local MaxThermalLiftWindScale = FinWindPropertiesTable[ "MaxThermalLiftWindScale" ]
+
     FINOS_AddDataToEntFinTable( ent, "fin_os__EntWindProperties", {
 
-        EnableWind = GetConVar( "finos_cl_wind_EnableWind" ):GetInt(),
-        ForcePerSquareMeterArea = GetConVar( "finos_cl_wind_ForcePerSquareMeterArea" ):GetFloat(),
-        MinWindScale = GetConVar( "finos_cl_wind_MinWindScale" ):GetFloat(),
-        MaxWindScale = GetConVar( "finos_cl_wind_MaxWindScale" ):GetFloat(),
+        EnableWind = ( EnableWind or GetConVar( "finos_cl_wind_enableWind" ):GetInt() ),
+        ForcePerSquareMeterArea = ( ForcePerSquareMeterArea or GetConVar( "finos_cl_wind_forcePerSquareMeterArea" ):GetFloat() ),
+        MinWindScale = ( MinWindScale or GetConVar( "finos_cl_wind_minWindScale" ):GetFloat() ),
+        MaxWindScale = ( MaxWindScale or GetConVar( "finos_cl_wind_maxWindScale" ):GetFloat() ),
 
-        ActivateWildWind = GetConVar( "finos_cl_wind_ActivateWildWind" ):GetInt(),
-        MinWildWindScale = GetConVar( "finos_cl_wind_MinWildWindScale" ):GetFloat(),
-        MaxWildWindScale = GetConVar( "finos_cl_wind_MaxWildWindScale" ):GetFloat(),
+        ActivateWildWind = ( ActivateWildWind or GetConVar( "finos_cl_wind_activateWildWind" ):GetInt() ),
+        MinWildWindScale = ( MinWildWindScale or GetConVar( "finos_cl_wind_minWildWindScale" ):GetFloat() ),
+        MaxWildWindScale = ( MaxWildWindScale or GetConVar( "finos_cl_wind_maxWildWindScale" ):GetFloat() ),
 
-        ActivateThermalWind = GetConVar( "finos_cl_wind_ActivateThermalWind" ):GetInt(),
-        MaxThermalLiftWindScale = GetConVar( "finos_cl_wind_MaxThermalLiftWindScale" ):GetFloat()
+        ActivateThermalWind = ( ActivateThermalWind or GetConVar( "finos_cl_wind_activateThermalWind" ):GetInt() ),
+        MaxThermalLiftWindScale = ( MaxThermalLiftWindScale or GetConVar( "finos_cl_wind_maxThermalLiftWindScale" ):GetFloat() )
 
     }, nil, "ID3_Wind", true )
+
+    -- Have to be last
+    FINOS_WriteDuplicatorDataForEntity( ent )
 
     if not prevFinOSBrainValid and not game.SinglePlayer() then owner:SetNWInt( "fin_os_ent_amount", owner:GetNWInt( "fin_os_ent_amount", 0 ) + 1 ) end
 

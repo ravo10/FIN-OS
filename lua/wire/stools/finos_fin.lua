@@ -13,8 +13,10 @@ if WireToolSetup then
         language.Add( "Tool.wire_finos_fin.out_AI",     "Output Area (inches)"      )
         language.Add( "Tool.wire_finos_fin.out_LFN",    "Output Lift Force"         )
         language.Add( "Tool.wire_finos_fin.out_DFN",    "Output Drag Force"         )
+        language.Add( "Tool.wire_finos_fin.out_WE",     "Output Wind Enabled"       )
+        language.Add( "Tool.wire_finos_fin.out_WFA",    "Output Wind Force Applied" )
         language.Add( "Tool.wire_finos_fin.out_SCALAR", "Output Scalar"             )
-        language.Add( "Tool.wire_finos_fin.out_SKMH",   "Output Speed (kph)"       )
+        language.Add( "Tool.wire_finos_fin.out_SKMH",   "Output Speed (kph)"        )
         language.Add( "Tool.wire_finos_fin.out_SMPH",   "Output Speed (mph)"        )
         language.Add( "Tool.wire_finos_fin.out_MPS",    "Output Speed (mps)"        )
         language.Add( "Tool.wire_finos_fin.out_BT",     "Output if Being Tracked"   )
@@ -35,6 +37,8 @@ if WireToolSetup then
                 self:GetClientNumber( "out_AI"      ) ~= 0,
                 self:GetClientNumber( "out_LFN"     ) ~= 0,
                 self:GetClientNumber( "out_DFN"     ) ~= 0,
+                self:GetClientNumber( "out_WE"      ) ~= 0,
+                self:GetClientNumber( "out_WFA"     ) ~= 0,
                 self:GetClientNumber( "out_SCALAR"  ) ~= 0,
                 self:GetClientNumber( "out_SKMH"    ) ~= 0,
                 self:GetClientNumber( "out_SMPH"    ) ~= 0,
@@ -50,6 +54,8 @@ if WireToolSetup then
         out_AAP     = 1,
         out_LFN     = 1,
         out_DFN     = 1,
+        out_WE      = 1,
+        out_WFA     = 1,
         out_SCALAR  = 1,
         out_AM      = 1,
         out_AI      = 0,
@@ -70,6 +76,8 @@ if WireToolSetup then
         panel:CheckBox( "#Tool.wire_finos_fin.out_AI",      "wire_finos_fin_out_AI"     )
         panel:CheckBox( "#Tool.wire_finos_fin.out_LFN",     "wire_finos_fin_out_LFN"    )
         panel:CheckBox( "#Tool.wire_finos_fin.out_DFN",     "wire_finos_fin_out_DFN"    )
+        panel:CheckBox( "#Tool.wire_finos_fin.out_WE",      "wire_finos_fin_out_WE"     )
+        panel:CheckBox( "#Tool.wire_finos_fin.out_WFA",     "wire_finos_fin_out_WFA"    )
         panel:CheckBox( "#Tool.wire_finos_fin.out_SCALAR",  "wire_finos_fin_out_SCALAR" )
         panel:CheckBox( "#Tool.wire_finos_fin.out_SKMH",    "wire_finos_fin_out_SKMH"   )
         panel:CheckBox( "#Tool.wire_finos_fin.out_SMPH",    "wire_finos_fin_out_SMPH"   )

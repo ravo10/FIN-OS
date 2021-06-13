@@ -7,7 +7,7 @@ ENT.AdminSpawnable	= false
 
 ENT.PrintName		= "FIN OS Wing"
 ENT.Author			= "ravo (Norway)"
-ENT.Contact			= "N/A"
+ENT.Contact			= "Steam"
 ENT.Purpose			= "To make the Wing/Fin think and get physical with the air plane."
 ENT.Instructions	= "Use it with the custom FIN OS SWEP."
 

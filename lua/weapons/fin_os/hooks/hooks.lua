@@ -20,9 +20,10 @@ hook.Add( "SetupMove", "fin_os:SetupMove", function( pl, mv, cmd )
                 local scalarValue = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", "ID31" )[ "FinOS_LiftForceScalarValue_Normal" ]
 
                 local newScalarValue = scalarValue
+                local SCALE = 0.1
 
-                if mouseWheelScrollDelta > 0 then newScalarValue = newScalarValue + 0.5 else newScalarValue = newScalarValue - 0.5 end
-                if newScalarValue < 0.5 then newScalarValue = 0.5 elseif newScalarValue > GetConVar( "finos_maxscalarvalue" ):GetInt() then newScalarValue = GetConVar( "finos_maxscalarvalue" ):GetInt() end
+                if mouseWheelScrollDelta > 0 then newScalarValue = newScalarValue + SCALE else newScalarValue = newScalarValue - SCALE end
+                if newScalarValue < SCALE then newScalarValue = SCALE elseif newScalarValue > GetConVar( "finos_maxscalarvalue" ):GetInt() then newScalarValue = GetConVar( "finos_maxscalarvalue" ):GetInt() end
 
                 -- Store new scalar value
                 FINOS_AddDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", { FinOS_LiftForceScalarValue_Normal = newScalarValue }, nil, "ID30" )

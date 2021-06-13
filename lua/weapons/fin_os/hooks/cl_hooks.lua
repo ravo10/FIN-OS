@@ -38,6 +38,8 @@ end
 hook.Add( "KeyPress", "fin_os:KeyPress", function( pl, key ) DisabledScrollingMenuClient( pl, key, true ) end )
 hook.Add( "KeyRelease", "fin_os:KeyRelease", function( pl, key ) DisabledScrollingMenuClient( pl, key, false ) end )
 
+local function CheckIfWindTypeIsValid( value, windStatus ) if windStatus == "Yes" then return value else return value .. "*" end end
+
 hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
     -- For if in the future adding some more text in main window, and needing to move other elements relativly
@@ -71,6 +73,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             end
 
             local FinPhysicsPropertiesTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", "ID13" )
+            local FinWindPropertiesTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntWindProperties", "ID13.Wind" )
 
             if
                 ( FinSettingsTable[ "AttackAngle_Pitch" ] and FinSettingsTable[ "AttackAngle_RollCosinus" ] ) and
@@ -78,19 +81,38 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             then
 
                 -- Show important values to user on screen
-                local pitchAttackAngle = math.Round( FinSettingsTable[ "AttackAngle_Pitch" ] )
-                local rollCosinusFraction = FinSettingsTable[ "AttackAngle_RollCosinus" ]
+                local pitchAttackAngle = math.Round( FinSettingsTable[ "AttackAngle_Pitch" ] or 0 )
+                local rollCosinusFraction = FinSettingsTable[ "AttackAngle_RollCosinus" ] or 0
 
-                local speed = math.Round( FinPhysicsPropertiesTable[ "VelocityKmH" ] )
-                local force_lift = math.Round( FinPhysicsPropertiesTable[ "LiftForceNewtonsModified_realistic" ] )
-                local force_drag = math.Round( FinPhysicsPropertiesTable[ "DragForceNewtons" ] )
-                local area_meter_squared = math.Round( FinPhysicsPropertiesTable[ "AreaMeterSquared" ], 2 )
-                local liftForceScalarValue = FinPhysicsPropertiesTable[ "FinOS_LiftForceScalarValue" ]
+                local speed = math.Round( FinPhysicsPropertiesTable[ "VelocityKmH" ] or 0 )
+                local force_lift = math.Round( FinPhysicsPropertiesTable[ "LiftForceNewtonsModified_realistic" ] or 0 )
+                local force_drag = math.Round( FinPhysicsPropertiesTable[ "DragForceNewtons" ] or 0 )
+                local force_wind = math.Round( FinPhysicsPropertiesTable[ "FINOS_WindAmountNewtonsForArea" ] or 0 )
+                local area_meter_squared = math.Round( FinPhysicsPropertiesTable[ "AreaMeterSquared" ] or 0, 2 )
+                local liftForceScalarValue = FinPhysicsPropertiesTable[ "FinOS_LiftForceScalarValue" ] or 0
+
+                -- WIND
+                local OKMessage = "Yes"
+                local NotOkMessage = "No"
+
+                local WindEnabled = ( ( FinWindPropertiesTable[ "EnableWind" ] or 0 ) > 0 )
+                if WindEnabled then WindEnabled = OKMessage else WindEnabled = NotOkMessage end
+                local WildWind = ( ( FinWindPropertiesTable[ "ActivateWildWind" ] or 0 ) > 0 )
+                if WildWind then WildWind = OKMessage else WildWind = NotOkMessage end
+                local ThermalWind = ( ( FinWindPropertiesTable[ "ActivateThermalWind" ] or 0 ) > 0 )
+                if ThermalWind then ThermalWind = OKMessage else ThermalWind = NotOkMessage end
+
+                local MinWind = math.Round( FinWindPropertiesTable[ "MinWindScale" ] or 0, 2 )
+                local MaxWind = math.Round( FinWindPropertiesTable[ "MaxWindScale" ] or 0, 2 )
+                local MinWildWind = math.Round( FinWindPropertiesTable[ "MinWildWindScale" ] or 0, 2 )
+                local MaxWildWind = math.Round( FinWindPropertiesTable[ "MaxWildWindScale" ] or 0, 2 )
+                local MaxThermalLiftWind = math.Round( FinWindPropertiesTable[ "MaxThermalLiftWindScale" ] or 0, 2 )
 
                 local backgroundPosX = ( ScrW() - 300 - 20 )
                 local backgroundPosY = 250 + someExtra001
 
                 local textColor = Color( 255, 255, 255, 255 )
+                local textColor2 = Color( 252, 242, 99, 251)
                 local textType = "HudSelectionText"
 
                 draw.RoundedBox( 8,
@@ -119,7 +141,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 draw.DrawText(
 
-                    "Air Attack Angle: " .. pitchAttackAngle.. "˚ | " .. pitchAttackAngle_FLAP.. "˚",
+                    "Air Attack Angle: " .. pitchAttackAngle .. "˚ | " .. pitchAttackAngle_FLAP .. "˚",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 ),
@@ -140,7 +162,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 draw.DrawText(
 
-                    "Speed: " .. speed.. " km/h",
+                    "Speed: " .. speed .. " km/h",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 ),
@@ -150,7 +172,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
                 draw.DrawText(
 
-                    "Force[LIFT]: " .. force_lift.. " N",
+                    "Force[LIFT]: " .. force_lift .. " N",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 ),
@@ -160,7 +182,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
                 draw.DrawText(
 
-                    "Force[DRAG]: " .. force_drag.. " N",
+                    "Force[DRAG]: " .. force_drag .. " N",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 2.1 ),
@@ -170,10 +192,20 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
                 draw.DrawText(
 
-                    "Area: " .. area_meter_squared.. " m²",
+                    "Force[WIND]: " .. CheckIfWindTypeIsValid( force_wind .. " N", WindEnabled ),
                     textType,
                     ( backgroundPosX + 20 ),
-                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 3 + 5 ),
+                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 3.2 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+                draw.DrawText(
+
+                    "Area: " .. area_meter_squared .. " m²",
+                    textType,
+                    ( backgroundPosX + 20 ),
+                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 5 ),
                     textColor,
                     TEXT_ALIGN_LEFT
 
@@ -184,7 +216,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "Wing correct way up?: " .. WingCorrectWayUp( rollCosinusFraction, pitchAttackAngle, Entity ),
                     textType,
                     ( backgroundPosX + 20 ),
-                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 ),
+                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 5 + 20 ),
                     textColor,
                     TEXT_ALIGN_LEFT
 
@@ -195,8 +227,110 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "Scalar ( Force[LIFT/DRAG] ): " .. liftForceScalarValue,
                     textType,
                     ( backgroundPosX + 20 ),
-                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 * 2 ),
+                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 6 + 20 * 2 ),
                     textColor,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                local topStart = 20
+                local leftStart = 3
+                -- More Wind Information
+                draw.DrawText(
+
+                    "WIND:",
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart ),
+                    ( backgroundPosY + topStart + 15 * 0 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                draw.DrawText(
+
+                    "Enabled: " .. WindEnabled,
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 ),
+                    ( backgroundPosY + topStart + 5 + 15 * 1 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                draw.DrawText(
+
+                    "Wild: " .. WildWind,
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 ),
+                    ( backgroundPosY + topStart + 5 + 3 + 15 * 2 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                draw.DrawText(
+
+                    "Thermal Lift: " .. ThermalWind,
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 ),
+                    ( backgroundPosY + topStart + 5 + 3 + 15 * 3 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                draw.DrawText(
+
+                    "Min.: " .. CheckIfWindTypeIsValid( MinWind, WindEnabled ),
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 3 - 4 * 0 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                draw.DrawText(
+
+                    "Max.: " .. CheckIfWindTypeIsValid( MaxWind, WindEnabled ),
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 4 - 4 * 1 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                draw.DrawText(
+
+                    "Min. Wild: " .. CheckIfWindTypeIsValid( MinWildWind, WildWind ),
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 5 - 4 * 0 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                draw.DrawText(
+
+                    "Max. Wild: " .. CheckIfWindTypeIsValid( MaxWildWind, WildWind ),
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 6 - 4 * 1 ),
+                    textColor2,
+                    TEXT_ALIGN_LEFT
+
+                )
+
+                draw.DrawText(
+
+                    "Max. Th. Lift: " .. CheckIfWindTypeIsValid( MaxThermalLiftWind, ThermalWind ),
+                    textType,
+                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 7 - 4 * 0 ),
+                    textColor2,
                     TEXT_ALIGN_LEFT
 
                 )
@@ -353,34 +487,41 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
         if PHYSICSPROPERTIESSTABLE and PHYSICSPROPERTIESSTABLE["FinBeingTracked"] and EntTruty( PHYSICSPROPERTIESSTABLE["FinBeingTracked"] ) then
 
             local width = 150
+            local height = 106
 
             local backgroundPosX = ( ScrW() - width - 20 )
             local backgroundPosY = ( 250 + 210 ) + someExtra001
 
-            local pitchAttackAngle = math.Round( PHYSICSPROPERTIESSTABLE[ "AttackAngle_Pitch_FIN" ] )
-            local pitchAttackAngle_FLAP = math.Round( PHYSICSPROPERTIESSTABLE[ "AttackAngle_Pitch_FLAP" ] )
-            local rollCosinusFraction = PHYSICSPROPERTIESSTABLE[ "AttackAngle_RollCosinus_FIN" ]
+            local pitchAttackAngle = math.Round( PHYSICSPROPERTIESSTABLE[ "AttackAngle_Pitch_FIN" ] or 0 )
+            local pitchAttackAngle_FLAP = math.Round( PHYSICSPROPERTIESSTABLE[ "AttackAngle_Pitch_FLAP" ] or 0 )
+            local rollCosinusFraction = PHYSICSPROPERTIESSTABLE[ "AttackAngle_RollCosinus_FIN" ] or 0
 
-            local speed = math.Round( PHYSICSPROPERTIESSTABLE[ "VelocityKmH" ] )
-            local force_lift = math.Round( PHYSICSPROPERTIESSTABLE[ "LiftForceNewtonsModified_realistic" ] )
-            local force_drag = math.Round( PHYSICSPROPERTIESSTABLE[ "DragForceNewtons" ] )
-            local area_meter_squared = math.Round( PHYSICSPROPERTIESSTABLE[ "AreaMeterSquared" ], 2 )
+            local speed = math.Round( PHYSICSPROPERTIESSTABLE[ "VelocityKmH" ] or 0 )
+            local force_lift = math.Round( PHYSICSPROPERTIESSTABLE[ "LiftForceNewtonsModified_realistic" ] or 0 )
+            local force_drag = math.Round( PHYSICSPROPERTIESSTABLE[ "DragForceNewtons" ] or 0 )
+            local force_wind = math.Round( PHYSICSPROPERTIESSTABLE[ "FINOS_WindAmountNewtonsForArea" ] or 0 )
+            local area_meter_squared = math.Round( PHYSICSPROPERTIESSTABLE[ "AreaMeterSquared" ] or 0, 2 )
+
+            -- WIND
+            local WindEnabled = ( ( PHYSICSPROPERTIESSTABLE[ "EnableWind" ] or 0 ) > 0 )
+            if WindEnabled then WindEnabled = "Yes" else WindEnabled = "No" end
 
             draw.RoundedBox( 8,
 
                 backgroundPosX,
                 backgroundPosY,
                 width,
-                93,
+                height,
                 Color( 170, 238, 255, 203 )
 
             )
 
             local textColor = Color( 0, 0, 0, 225)
+            local textColor2 = Color( 238, 255, 170)
 
             draw.DrawText(
 
-                "AAA: " .. pitchAttackAngle.. "˚ | " .. pitchAttackAngle_FLAP.. "˚",
+                "AAA: " .. pitchAttackAngle.. "˚ | " .. pitchAttackAngle_FLAP .. "˚",
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 ),
@@ -411,7 +552,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             )
             draw.DrawText(
 
-                "Force[LIFT]: " .. force_lift.. " N",
+                "Force[LIFT]: " .. force_lift .. " N",
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 * 3 + 12 * 2 + 4 + 7.5 ),
@@ -421,11 +562,21 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             )
             draw.DrawText(
 
-                "Force[DRAG]: " .. force_drag.. " N",
+                "Force[DRAG]: " .. force_drag .. " N",
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 * 3 + 12 * 2 + 4 * 4 + 7.5 ),
                 textColor,
+                TEXT_ALIGN_LEFT
+
+            )
+            draw.DrawText(
+
+                "Force[WIND]: " .. CheckIfWindTypeIsValid( force_wind .. " N", WindEnabled ),
+                "DermaDefaultBold",
+                ( backgroundPosX + 10 ),
+                ( backgroundPosY + 8 * 3 + 12 * 2 + 4 * 7 + 7.5 ),
+                textColor2,
                 TEXT_ALIGN_LEFT
 
             )
@@ -545,7 +696,7 @@ local function FINOS_DrawGrid( Entity, type )
 
     else print( "FINOS: Didn't find any matching type for grid.: Front, Back, Top, Bottom, Left or Right." ) return nil end
 
-    local _color = Color( 228, 15, 15, 150)
+    local _color = Color( GetConVar( "finos_cl_gridColorR" ):GetInt(), GetConVar( "finos_cl_gridColorG" ):GetInt(), GetConVar( "finos_cl_gridColorB" ):GetInt() )
 
     local loopCount1 = maxPosPoint3
     local loopCount2 = maxPosPoint2
@@ -1064,11 +1215,9 @@ local function createUserSettingsPanel()
     end
 
     local GridSizeSliderContainer = vgui.Create( "DForm", GridSizeSliderBox )
-    GridSizeSliderContainer:SetName( "Grid Size ( used for Forward Direction [DRAG/WIND] )" )
+    GridSizeSliderContainer:SetName( "Grid Size and Color ( used for Forward Direction [DRAG/WIND] )" )
     GridSizeSliderContainer:SetSize( GridSizeSliderBox:GetWide() - 10 - 2, GridSizeSliderBox:GetTall() )
     GridSizeSliderContainer:SetPos( 6, 6 )
-    GridSizeSliderContainer:NumSlider( "X Cord. (def.: 9)", "finos_cl_gridSizeX", 1, 90 )
-    GridSizeSliderContainer:NumSlider( "Y Cord. (def.: 9)", "finos_cl_gridSizeY", 1, 90 )
 
     GridSizeSliderContainer.Paint = function( s, w, h )
         draw.RoundedBox(8, 0, 0, w, h,
@@ -1078,6 +1227,22 @@ local function createUserSettingsPanel()
             Color( 27, 11, 247, 100)
         )
     end
+
+    GridSizeSliderContainer:NumSlider( "X Cord. (def.: 9)", "finos_cl_gridSizeX", 1, 90 )
+    GridSizeSliderContainer:NumSlider( "Y Cord. (def.: 9)", "finos_cl_gridSizeY", 1, 90 )
+
+    GridColorMixer = vgui.Create( "DColorMixer", GridSizeSliderContainer )
+    GridColorMixer:SetSize( GridSizeSliderContainer:GetWide(), 150 )
+    GridColorMixer:SetPos( 0, GridSizeSliderContainer:GetTall() - GridColorMixer:GetTall() - 12 )
+    GridColorMixer:SetPalette( false )
+    GridColorMixer:SetAlphaBar( false )
+    GridColorMixer:SetWangs( true )
+
+    GridColorMixer:SetConVarR( "finos_cl_gridColorR" )
+    GridColorMixer:SetConVarG( "finos_cl_gridColorG" )
+    GridColorMixer:SetConVarB( "finos_cl_gridColorB" )
+
+    GridColorMixer:SetColor( Color( GetConVar( "finos_cl_gridColorR" ):GetInt(), GetConVar( "finos_cl_gridColorG" ):GetInt(), GetConVar( "finos_cl_gridColorB" ):GetInt() ) )
 
     -- ** WIND Settings ** --
     local WindSettingsPanel = vgui.Create( "DPanel", DermaPanel )
@@ -1100,7 +1265,7 @@ local function createUserSettingsPanel()
     WindSettingApplySettingsButton:SetText( "Apply to eye target" )
     WindSettingApplySettingsButton:SizeToContents()
     WindSettingApplySettingsButton:SetSize( WindSettingApplySettingsButton:GetWide() + 20, WindSettingApplySettingsButton:GetTall() + 20 )
-    WindSettingApplySettingsButton:SetPos( settingsPanelWidthRightSide - 107 - 20, 5 )
+    WindSettingApplySettingsButton:SetPos( settingsPanelWidthRightSide - WindSettingApplySettingsButton:GetWide() - 5, 5 )
     function WindSettingApplySettingsButton:DoClick()
 
         -- Apply settings
@@ -1111,31 +1276,59 @@ local function createUserSettingsPanel()
             net.WriteEntity( Entity )
         net.SendToServer()
 
+        if Entity and Entity:IsValid() and not Entity:IsWorld() then LocalPlayer():SetNWEntity( "fin_os_lastEyeTargetUsedWindSettingsPanel", Entity ) end
+
     end
 
     WindSettingApplySettingsButton.Paint = function( s, w, h )
-        draw.RoundedBox(8, 0, 0, w, h,
+        draw.RoundedBox(6, 0, 0, w, h,
             Color(27, 11, 247, 220)
         )
         local border = 3
-        draw.RoundedBox(8, border, border, w - border * 2, h - border * 2,
-            Color(7, 248, 99)
+        draw.RoundedBox(6, border, border, w - border * 2, h - border * 2,
+            Color(72, 243, 123)
+        )
+    end
+
+    local WindSettingApplySettingsToLastEnteryButton = vgui.Create( "DButton", WindSettingsPanel )
+    WindSettingApplySettingsToLastEnteryButton:SetText( "Apply to last eye target" )
+    WindSettingApplySettingsToLastEnteryButton:SizeToContents()
+    WindSettingApplySettingsToLastEnteryButton:SetSize( WindSettingApplySettingsToLastEnteryButton:GetWide() + 20, WindSettingApplySettingsToLastEnteryButton:GetTall() + 20 )
+    WindSettingApplySettingsToLastEnteryButton:SetPos( settingsPanelWidthRightSide - WindSettingApplySettingsToLastEnteryButton:GetWide() - 5, 5 + WindSettingApplySettingsButton:GetTall() + 5 )
+    function WindSettingApplySettingsToLastEnteryButton:DoClick()
+
+        -- Apply settings
+        local Entity = LocalPlayer():GetNWEntity( "fin_os_lastEyeTargetUsedWindSettingsPanel" )
+
+        net.Start( "FINOS_UpdateWindSettings_SERVER" )
+            net.WriteEntity( Entity )
+        net.SendToServer()
+
+    end
+
+    WindSettingApplySettingsToLastEnteryButton.Paint = function( s, w, h )
+        draw.RoundedBox(6, 0, 0, w, h,
+            Color(27, 11, 247, 220)
+        )
+        local border = 3
+        draw.RoundedBox(6, border, border, w - border * 2, h - border * 2,
+            Color(248, 238, 97)
         )
     end
 
     local textColor = Color( 53, 53, 53)
     local backgroundColor = Color( 53, 53, 53, 60)
 
-    local WindSettingCheckBox_EnableWind = addItemBooleanClientSide( "Enable Wind", "finos_cl_wind_EnableWind", 10, WindSettingsPanel, textColor, backgroundColor )
-    WindSettingCheckBox_EnableWind:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    local WindSettingCheckBox_EnableWind = addItemBooleanClientSide( "Enable Wind", "finos_cl_wind_enableWind", 10, WindSettingsPanel, textColor, backgroundColor )
+    WindSettingCheckBox_EnableWind:SetSize( settingsPanelWidthRightSide / 2 - 20, 20 )
     WindSettingCheckBox_EnableWind:SetPos( 10, 27 + 23 * 0 )
 
-    local WindSettingCheckBox_ActivateWildWind = addItemBooleanClientSide( "Activate Wild Wind", "finos_cl_wind_ActivateWildWind", 10, WindSettingsPanel, textColor, backgroundColor )
-    WindSettingCheckBox_ActivateWildWind:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    local WindSettingCheckBox_ActivateWildWind = addItemBooleanClientSide( "Activate Wild Wind", "finos_cl_wind_activateWildWind", 10, WindSettingsPanel, textColor, backgroundColor )
+    WindSettingCheckBox_ActivateWildWind:SetSize( settingsPanelWidthRightSide / 2 - 20, 20 )
     WindSettingCheckBox_ActivateWildWind:SetPos( 10, 27 + 23 * 1 )
 
-    local WindSettingCheckBox_ActivateWildWind = addItemBooleanClientSide( "Activate Thermal Wind", "finos_cl_wind_ActivateThermalWind", 10, WindSettingsPanel, textColor, backgroundColor )
-    WindSettingCheckBox_ActivateWildWind:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    local WindSettingCheckBox_ActivateWildWind = addItemBooleanClientSide( "Activate Thermal Wind", "finos_cl_wind_activateThermalWind", 10, WindSettingsPanel, textColor, backgroundColor )
+    WindSettingCheckBox_ActivateWildWind:SetSize( settingsPanelWidthRightSide / 2 - 20, 20 )
     WindSettingCheckBox_ActivateWildWind:SetPos( 10, 27 + 23 * 2 )
 
     local WindSettingSliderContainer = vgui.Create( "DForm", WindSettingsPanel )
@@ -1144,15 +1337,15 @@ local function createUserSettingsPanel()
     WindSettingSliderContainer:SetPos( 10, 30 + 20 * 3.4 )
 
     -- Sliders
-    WindSettingSliderContainer:NumSlider( "Wind Force per. m² (def.: 300)", "finos_cl_wind_ForcePerSquareMeterArea", -300000, 300000 )
+    WindSettingSliderContainer:NumSlider( "Wind Force per. m² (def.: 300)", "finos_cl_wind_forcePerSquareMeterArea", -300000, 300000 )
 
-    WindSettingSliderContainer:NumSlider( "Wind[Min.] (def.: 0.4)", "finos_cl_wind_MinWindScale", 0, 1 )
-    WindSettingSliderContainer:NumSlider( "Wind[Max.] (def.: 0.8)", "finos_cl_wind_MaxWindScale", 0, 1 )
+    WindSettingSliderContainer:NumSlider( "Wind[Min.] (def.: 0.4)", "finos_cl_wind_minWindScale", 0, 1 )
+    WindSettingSliderContainer:NumSlider( "Wind[Max.] (def.: 0.8)", "finos_cl_wind_maxWindScale", 0, 1 )
 
-    WindSettingSliderContainer:NumSlider( "Wild Wind[Min.] (def.: 1)", "finos_cl_wind_MinWildWindScale", 1, 6 )
-    WindSettingSliderContainer:NumSlider( "Wild Wind[Max.] (def.: 1.13)", "finos_cl_wind_MaxWildWindScale", 1, 6 )
+    WindSettingSliderContainer:NumSlider( "Wild Wind[Min.] (def.: 1)", "finos_cl_wind_minWildWindScale", 0.1, 6 )
+    WindSettingSliderContainer:NumSlider( "Wild Wind[Max.] (def.: 1.13)", "finos_cl_wind_maxWildWindScale", 0.1, 6 )
 
-    WindSettingSliderContainer:NumSlider( "Thermal Lift Wind[Max.] (def.: 36)", "finos_cl_wind_MaxThermalLiftWindScale", 1, 200 )
+    WindSettingSliderContainer:NumSlider( "Thermal Lift Wind[Max.] (def.: 36)", "finos_cl_wind_maxThermalLiftWindScale", 0.1, 200 )
 
     WindSettingSliderContainer.Paint = function( s, w, h )
         draw.RoundedBox(8, 0, 0, w, h,

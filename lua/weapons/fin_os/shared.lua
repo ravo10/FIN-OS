@@ -15,7 +15,7 @@ sound.Add( {
 SWEP.PrintName      = "FIN OS Tool"
 SWEP.Author         = "ravo (Norway)"
 SWEP.Category       = "Tools"
-SWEP.Contact        = "N/A"
+SWEP.Contact        = "Steam"
 SWEP.Purpose        = "Produce a FIN (prop-physics)"
 SWEP.Instructions   = [[
 Left-Click to APPLY
@@ -325,7 +325,14 @@ if SERVER then
 
         local Entity = net.ReadEntity()
 
-        if Entity:IsWorld() then
+        if not Entity or ( Entity and not Entity:IsValid() ) then
+
+            FINOS_AlertPlayer( "**[WIND] Entity is unvalid!", pl )
+            FINOS_SendNotification( "[WIND] Entity is unvalid!", FIN_OS_NOTIFY_ERROR, pl, 3 )
+
+            return nil
+
+        elseif Entity:IsWorld() then
 
             FINOS_AlertPlayer( "**[WIND] Aim on an Entity to update Wind Settings", pl )
             FINOS_SendNotification( "[WIND] Aim on an Entity to update Wind Settings", FIN_OS_NOTIFY_ERROR, pl, 3 )
@@ -352,53 +359,63 @@ if SERVER then
 
         end
 
-        local EnableWind                = GetConVar( "finos_cl_wind_EnableWind" ):GetInt()
-        local ForcePerSquareMeterArea   = GetConVar( "finos_cl_wind_ForcePerSquareMeterArea" ):GetFloat()
-        local MinWindScale              = GetConVar( "finos_cl_wind_MinWindScale" ):GetFloat()
-        local MaxWindScale              = GetConVar( "finos_cl_wind_MaxWindScale" ):GetFloat()
+        local EnableWind                = GetConVar( "finos_cl_wind_enableWind" ):GetInt()
+        local ForcePerSquareMeterArea   = GetConVar( "finos_cl_wind_forcePerSquareMeterArea" ):GetFloat()
+        local MinWindScale              = GetConVar( "finos_cl_wind_minWindScale" ):GetFloat()
+        local MaxWindScale              = GetConVar( "finos_cl_wind_maxWindScale" ):GetFloat()
 
-        local ActivateWildWind          = GetConVar( "finos_cl_wind_ActivateWildWind" ):GetInt()
-        local MinWildWindScale          = GetConVar( "finos_cl_wind_MinWildWindScale" ):GetFloat()
-        local MaxWildWindScale          = GetConVar( "finos_cl_wind_MaxWildWindScale" ):GetFloat()
+        local ActivateWildWind          = GetConVar( "finos_cl_wind_activateWildWind" ):GetInt()
+        local MinWildWindScale          = GetConVar( "finos_cl_wind_minWildWindScale" ):GetFloat()
+        local MaxWildWindScale          = GetConVar( "finos_cl_wind_maxWildWindScale" ):GetFloat()
 
-        local ActivateThermalWind       = GetConVar( "finos_cl_wind_ActivateThermalWind" ):GetInt()
-        local MaxThermalLiftWindScale   = GetConVar( "finos_cl_wind_MaxThermalLiftWindScale" ):GetFloat()
+        local ActivateThermalWind       = GetConVar( "finos_cl_wind_activateThermalWind" ):GetInt()
+        local MaxThermalLiftWindScale   = GetConVar( "finos_cl_wind_maxThermalLiftWindScale" ):GetFloat()
 
         -- Check/Adjust to allowed settings ( from SERVER )
-        local MaxForcePerSquareMeterAreaAllowed     = GetConVar( "finos_wind_MaxForcePerSquareMeterAreaAllowed" ):GetInt()
-        local MinWindScaleAllowed                   = GetConVar( "finos_wind_MinWindScaleAllowed" ):GetInt()
-        local MaxWindScaleAllowed                   = GetConVar( "finos_wind_MaxWindScaleAllowed" ):GetInt()
-        local MinWildWindScaleAllowed               = GetConVar( "finos_wind_MinWildWindScaleAllowed" ):GetInt()
-        local MaxWildWindScaleAllowed               = GetConVar( "finos_wind_MaxWildWindScaleAllowed" ):GetInt()
-        local MaxActivateThermalWindScaleAllowed    = GetConVar( "finos_wind_MaxActivateThermalWindScaleAllowed" ):GetInt()
+        local MaxForcePerSquareMeterAreaAllowed     = GetConVar( "finos_wind_maxForcePerSquareMeterAreaAllowed" ):GetFloat()
+        local MinWindScaleAllowed                   = GetConVar( "finos_wind_minWindScaleAllowed" ):GetFloat()
+        local MaxWindScaleAllowed                   = GetConVar( "finos_wind_maxWindScaleAllowed" ):GetFloat()
+        local MinWildWindScaleAllowed               = GetConVar( "finos_wind_minWildWindScaleAllowed" ):GetFloat()
+        local MaxWildWindScaleAllowed               = GetConVar( "finos_wind_maxWildWindScaleAllowed" ):GetFloat()
+        local MaxActivateThermalWindScaleAllowed    = GetConVar( "finos_wind_maxActivateThermalWindScaleAllowed" ):GetFloat()
+
+        local function r( id, value, limitValue, compare )
+
+            FINOS_AlertPlayer( "**[WIND] The " .. string.upper( id ) .. " SETTING was overwritten to: " .. math.Round( limitValue, 2 ) .. "! Because: " .. math.Round( value, 2 ) .. " " .. compare .. " " .. math.Round( limitValue, 2 ) .. ". Can be adjusted by admin.", pl )
+            FINOS_SendNotification( "[WIND] The " .. string.upper( id ) .. " SETTING was overwritten to: " .. math.Round( limitValue, 2 ) .. "! Because: " .. math.Round( value, 2 ) .. " " .. compare .. " " .. math.Round( limitValue, 2 ) .. ". Can be adjusted by admin", FIN_OS_NOTIFY_ERROR, pl, 6 )
+
+        end
 
         -- Prevent Player setting invalid settings ( let server decide the min/max amount )
-        if ForcePerSquareMeterArea > MaxForcePerSquareMeterAreaAllowed then ForcePerSquareMeterArea = MaxForcePerSquareMeterAreaAllowed end
+        if math.abs( ForcePerSquareMeterArea ) > math.abs( MaxForcePerSquareMeterAreaAllowed ) then r( "Wind Force [Max]", ForcePerSquareMeterArea, MaxForcePerSquareMeterAreaAllowed, ">" ) ForcePerSquareMeterArea = MaxForcePerSquareMeterAreaAllowed end
 
-        if MinWindScale > MinWindScaleAllowed then MinWindScale = MinWindScaleAllowed end
-        if MaxWindScale > MaxWindScaleAllowed then MaxWindScale = MaxWindScaleAllowed end
+        if math.abs( MinWindScale ) < math.abs( MinWindScaleAllowed ) then r( "Wind [Min]", MinWindScale, MinWindScaleAllowed, "<" ) MinWindScale = MinWindScaleAllowed end
+        if math.abs( MaxWindScale ) > math.abs( MaxWindScaleAllowed ) then r( "Wind [Max]", MaxWindScale, MaxWindScaleAllowed, ">" ) MaxWindScale = MaxWindScaleAllowed end
 
-        if MinWildWindScale > MinWildWindScaleAllowed then MinWildWindScale = MinWildWindScaleAllowed end
-        if MaxWildWindScale > MaxWildWindScaleAllowed then MaxWildWindScale = MaxWildWindScaleAllowed end
+        if math.abs( MinWildWindScale ) < math.abs( MinWildWindScaleAllowed ) then r( "Wild [Min]", MinWildWindScale, MinWildWindScaleAllowed, "<" ) MinWildWindScale = MinWildWindScaleAllowed end
+        if math.abs( MaxWildWindScale ) > math.abs( MaxWildWindScaleAllowed ) then r( "Wild [Max]", MaxWildWindScale, MaxWildWindScaleAllowed, ">" ) MaxWildWindScale = MaxWildWindScaleAllowed end
 
-        if MaxThermalLiftWindScale > MaxActivateThermalWindScaleAllowed then MaxThermalLiftWindScale = MaxActivateThermalWindScaleAllowed end
+        if math.abs( MaxThermalLiftWindScale ) > math.abs( MaxActivateThermalWindScaleAllowed ) then r( "Thermal [Max]", MaxThermalLiftWindScale, MaxActivateThermalWindScaleAllowed, ">" ) MaxThermalLiftWindScale = MaxActivateThermalWindScaleAllowed end
 
         -- Apply to Entity ( store )
         FINOS_AddDataToEntFinTable( Entity, "fin_os__EntWindProperties", {
 
-            EnableWind = EnableWind,
-            ForcePerSquareMeterArea = ForcePerSquareMeterArea,
-            MinWindScale = MinWindScale,
-            MaxWindScale = MaxWindScale,
+            EnableWind                  = EnableWind,
+            ForcePerSquareMeterArea     = ForcePerSquareMeterArea,
+            MinWindScale                = MinWindScale,
+            MaxWindScale                = MaxWindScale,
 
-            ActivateWildWind = ActivateWildWind,
-            MinWildWindScale = MinWildWindScale,
-            MaxWildWindScale = MaxWildWindScale,
+            ActivateWildWind            = ActivateWildWind,
+            MinWildWindScale            = MinWildWindScale,
+            MaxWildWindScale            = MaxWildWindScale,
 
-            ActivateThermalWind = ActivateThermalWind,
-            MaxThermalLiftWindScale = MaxThermalLiftWindScale
+            ActivateThermalWind         = ActivateThermalWind,
+            MaxThermalLiftWindScale     = MaxThermalLiftWindScale
 
         }, nil, "ID1_Wind", true )
+
+        -- Store for duplication
+        FINOS_WriteDuplicatorDataForEntity( Entity )
 
         FINOS_AlertPlayer( "**[WIND] Applied NEW Wind settings for fin!", pl )
         FINOS_SendNotification( "[WIND] Applied NEW Wind settings for fin!", FIN_OS_NOTIFY_GENERIC, pl, 4 )

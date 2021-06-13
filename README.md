@@ -28,11 +28,11 @@
 * Supports Wiremod input/output ( *Physics => FIN OS Tool* )
 
 ### Console Variables
-* ```finos_maxfin_os_ent ( def. = 20 ) [ FCVAR_PROTECTED ]``` - Amount of Fin OS fin's possible for each Player to spawn ( only for multiplayer ).
-* ```finos_rhodensistyfluidvalue ( def. = 1.29 ) [ FCVAR_PROTECTED ]``` - Mass density ( rho ) that will be applied to Fin OS fin.
-* ```finos_maxscalarvalue ( def. = 69 ) [ FCVAR_PROTECTED ]``` - Maximum scalar value a player can apply to a Fin OS fin.
-* ```finos_disablestrictmode ( def. = 0 ) [ FCVAR_PROTECTED ]``` - Disables checking for angle of prop and crossing vector lines, if you just want to be joking around ( other servers might not accept the duplicate tho ).
-* ```finos_disableprintchatmessages ( def. = 1 ) [ FCVAR_PROTECTED ]``` - Disables printing messages in chat ( only legacy ).
+* ```finos_maxfin_os_ent ( def. = 20 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Amount of Fin OS fin's possible for each Player to spawn ( only for multiplayer ).
+* ```finos_rhodensistyfluidvalue ( def. = 1.29 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Mass density ( rho ) that will be applied to Fin OS fin.
+* ```finos_maxscalarvalue ( def. = 69 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Maximum scalar value a player can apply to a Fin OS fin.
+* ```finos_disablestrictmode ( def. = 0 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Disables checking for angle of prop and crossing vector lines, if you just want to be joking around ( other servers might not accept the duplicate tho ).
+* ```finos_disableprintchatmessages ( def. = 1 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Disables printing messages in chat ( only legacy ).
 
 * ```finos_cl_enableHoverRingBall_fin ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the markers for a fin.
 * ```finos_cl_enableHoverRingBall_flap ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the markers for a flap.
@@ -42,30 +42,32 @@
 * ```finos_cl_gridSizeX ( def. = 9 ) [ FCVAR_ARCHIVE ]``` - Clientside. Adjusts the size of the grid in X position.
 * ```finos_cl_gridSizeY ( def. = 9 ) [ FCVAR_ARCHIVE ]``` - Clientside. Adjusts the size of the grid in Y position.
 
-**WIND Settings**
-* ```finos_wind_MaxForcePerSquareMeterAreaAllowed ( def. = def.: 1000 => ( -1000 - 1000 ) ) [ FCVAR_PROTECTED ]``` - Max. Allowed Wind Force Per. Square Meter of Area
-* ```finos_wind_MinMinWindScaleAllowed ( def. = def.: 1 ) [ FCVAR_PROTECTED ]``` - Min. Allowed Wild Wind Scale
-* ```finos_wind_MaxWindScaleAllowed ( def. = def.: 6 ) [ FCVAR_PROTECTED ]``` - Max. Allowed Wild Wind Scale
-* ```finos_wind_MaxActivateThermalWindAllowed ( def. = def.: 200 ) [ FCVAR_PROTECTED ]``` - Max. Allowed Thermal Lift Wind Scale
+* ```finos_cl_gridColorR ( def. = 13 ) [ FCVAR_ARCHIVE ]``` - Clientside. Change the Red channel for the grid color.
+* ```finos_cl_gridColorG ( def. = 146 ) [ FCVAR_ARCHIVE ]``` - Clientside. Change the Green channel for the grid color.
+* ```finos_cl_gridColorB ( def. = 241 ) [ FCVAR_ARCHIVE ]``` - Clientside. Change the Blue channel for the grid color.
+
+**WIND Settings:**
+* ```finos_wind_maxForcePerSquareMeterAreaAllowed ( def. = 6000 => ( -6000 - 6000 ) ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Max. Allowed Wind Force Per. Square Meter of Area.
+* ```finos_wind_minWindScaleAllowed ( def. = 0.1 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Min. Allowed Wild Wind Scale.
+* ```finos_wind_maxWindScaleAllowed ( def. = 6 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Max. Allowed Wild Wind Scale.
+* ```finos_wind_maxActivateThermalWindScaleAllowed ( def. = def.: 200 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Max. Allowed Thermal Lift Wind Scale.
 
 *Client*
-* ```finos_cl_wind_EnableWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Wind.
-* ```finos_cl_wind_ForcePerSquareMeterArea ( def. 300 => ( -300 - 300 ) )[ -300000 - 300000 ] [ FCVAR_ARCHIVE ]``` - Clientside. Wind Force Per. Square Meter of Area.
-* ```finos_cl_wind_MinWindScale ( def. = 0.4 )[ def.: 0 - 1 ( unit vector ) ] [ FCVAR_ARCHIVE ]``` - Clientside. Min. Wind Scale.
-* ```finos_cl_wind_MaxWindScale ( def. = 0.8 )[ def.: 0 - 1 ( unit vector ) ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Wind Scale.
-* ```finos_cl_wind_ActivateWildWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Wild Wind.
-* ```finos_cl_wind_MinWildWindScale ( def. = 1 )[ def.: 1 - 6 ] [ FCVAR_ARCHIVE ]``` - Clientside. Min. Wild Wind Scale.
-* ```finos_cl_wind_MaxWildWindScale ( def. = 1.13 )[ def.: 1 - 6 ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Wild Wind Scale.
-* ```finos_cl_wind_ActivateThermalWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Thermal Lift Wind.
-* ```finos_cl_wind_MaxThermalLiftWindScale ( def. = 36 )[ >1 - def.: 200 ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Thermal Lift Wind Scale.
+* ```finos_cl_wind_enableWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Wind.
+* ```finos_cl_wind_forcePerSquareMeterArea ( def. 300 => ( -300 - 300 ) )[ -300000 - 300000 ] [ FCVAR_ARCHIVE ]``` - Clientside. Wind Force Per. Square Meter of Area.
+* ```finos_cl_wind_minWindScale ( def. = 0.4 )[ def.: 0 - 1 ( unit vector ) ] [ FCVAR_ARCHIVE ]``` - Clientside. Min. Wind Scale.
+* ```finos_cl_wind_maxWindScale ( def. = 0.8 )[ def.: 0 - 1 ( unit vector ) ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Wind Scale.
+* ```finos_cl_wind_activateWildWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Wild Wind.
+* ```finos_cl_wind_minWildWindScale ( def. = 1 )[ def.: 0.1 - 6 ] [ FCVAR_ARCHIVE ]``` - Clientside. Min. Wild Wind Scale.
+* ```finos_cl_wind_maxWildWindScale ( def. = 1.13 )[ def.: 0.1 - 6 ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Wild Wind Scale.
+* ```finos_cl_wind_activateThermalWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Thermal Lift Wind.
+* ```finos_cl_wind_maxThermalLiftWindScale ( def. = 36 )[ >0.1 - def.: 200 ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Thermal Lift Wind Scale.
 
 ## @todo
 - Make a custom world model for the fin tool SWEP
-- Should a fin be added to the undo list ( ? )
-- Small issue with props having different angles ( over 90 degrees ) - compensated for that
 - Fix bones, so it will the Players custom player model
+- Small issue with props having different angles ( over 90 degrees ) - compensated for that [ DON'T THINK THIS IS AN ISSUE ANYMORE ]
 - Make the strict mode better ( ? )
-- More testing to make be assured it is stable, for a stable release
 
 ## Licence
 This addon is created by [ravo (Norway)](https://steamcommunity.com/sharedfiles/filedetails/?id=1647345157) or the uploader of this current viewed [SWEP](https://steamcommunity.com/sharedfiles/filedetails/?id=2440349261) on Steam Workshop.
