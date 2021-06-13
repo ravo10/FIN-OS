@@ -6,13 +6,33 @@ function SWEP:PrimaryAttack()
     local Entity = tr.Entity
     local OWNER = self:GetOwner()
 
+    if Entity:GetNWBool( "fin_os_active" ) and Entity:GetNWEntity( "fin_os_currentOwner" ) ~= OWNER then
+
+        FINOS_AlertPlayer( "**You are not the owner of this fin!", OWNER )
+        FINOS_SendNotification( "You are not the owner of this fin!", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
+
+        OWNER:EmitSound( "fin_os/error.wav", 41, 100 )
+
+        return nil
+
+    end
+
     if Entity and Entity:IsValid() and not Entity:GetNWBool( "fin_os_is_a_fin_flap" ) then
 
         if FINOS_FinOSFinMaxAmountReachedByPlayer( Entity, OWNER ) then return end
 
         if not OWNER:KeyDown( IN_USE ) then
 
-            -- Importtant
+            -- Add forward direction point
+            if FINOS_SetNewForwardDirection( Entity, Entity:WorldToLocal( tr.HitPos ), "ID1" ) then
+
+                -- Effect
+                self:DoShootEffect( tr.HitPos, tr.HitNormal, tr.Entity, tr.PhysicsBone, IsFirstTimePredicted() )
+                return
+
+            end
+
+            -- Important
             -- Set vector points on wing for area calculations
             local areAnyVectorLinesCrossingOrAngleHitNormalNotOK = FINOS_SetAreaPointsForFin( tr, OWNER, self )
             local IsWitinArea = false
@@ -34,11 +54,11 @@ function SWEP:PrimaryAttack()
 
                 local localHitPos = Entity:WorldToLocal( tr.HitPos )
 
-                local alfabethTable = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" };
+                local alfabethTable = { "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z" }
                 FINOS_AlertPlayer( "Added local area point: " .. alfabethTable[ amountOfPointsUsed ] .. "(" .. math.Round( localHitPos[ 1 ] ) .. ", " .. math.Round( localHitPos[ 2 ] ) .. ", " .. math.Round( localHitPos[ 3 ] ) .. ")", OWNER )
 
                 if amountOfPointsUsed == 1 then
-                    
+
                     FINOS_AlertPlayer( "*Add two or more points..", OWNER )
                     FINOS_SendNotification( "Add two or more points..", FIN_OS_NOTIFY_GENERIC, OWNER, 1.3 )
 

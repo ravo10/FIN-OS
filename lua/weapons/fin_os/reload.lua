@@ -8,8 +8,19 @@ function SWEP:Reload()
     -- Prevent to fast reload
     if CurTime() - lastReloadTime < 0.7 then return end lastReloadTime = CurTime()
 
-    local OWNER = self:GetOwner()
     local Entity = tr.Entity
+    local OWNER = self:GetOwner()
+
+    if Entity:GetNWBool( "fin_os_active" ) and Entity:GetNWEntity( "fin_os_currentOwner" ) ~= OWNER then
+
+        FINOS_AlertPlayer( "**You are not the owner of this fin!", OWNER )
+        FINOS_SendNotification( "You are not the owner of this fin!", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
+
+        OWNER:EmitSound( "fin_os/error.wav", 41, 100 )
+
+        return nil
+
+    end
 
     -- Remove fin or flap
     if Entity and Entity:IsValid() then

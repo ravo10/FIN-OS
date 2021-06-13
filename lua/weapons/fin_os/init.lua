@@ -70,6 +70,31 @@ CreateConVar(
 
 CreateClientConVar( "finos_cl_enableHoverRingBall_fin", "1", true, false )
 CreateClientConVar( "finos_cl_enableHoverRingBall_flap", "1", true, false )
+CreateClientConVar( "finos_cl_enableAlignAngleHelpers", "1", true, false )
+CreateClientConVar( "finos_cl_enableForwardDirectionArrow", "1", true, false )
+
+CreateClientConVar( "finos_cl_gridSizeX", "9", true, false ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_gridSizeY", "9", true, false ) --[[ FLOAT ]]
+
+-- WIND
+CreateConVar( "finos_wind_MaxForcePerSquareMeterAreaAllowed", 1000, FCVAR_PROTECTED, "Max Force Per. Square Meter For Area Allowed." )
+CreateConVar( "finos_wind_MinWindScaleAllowed", 0, FCVAR_PROTECTED, "Min. Wind Scale Allowed." )
+CreateConVar( "finos_wind_MaxWindScaleAllowed", 1, FCVAR_PROTECTED, "Max. Wind Scale Allowed." )
+CreateConVar( "finos_wind_MinWildWindScaleAllowed", 1, FCVAR_PROTECTED, "Min. Wild Wind Scale Allowed." )
+CreateConVar( "finos_wind_MaxWildWindScaleAllowed", 6, FCVAR_PROTECTED, "Max. Wild Wind Scale Allowed." )
+CreateConVar( "finos_wind_MaxActivateThermalWindScaleAllowed", 200, FCVAR_PROTECTED, "Max. Thermal Lift Wind Scale Allowed." )
+
+CreateClientConVar( "finos_cl_wind_EnableWind", "0", true, true )
+CreateClientConVar( "finos_cl_wind_ForcePerSquareMeterArea", "300", true, true ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_MinWindScale", "0.4", true, true ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_MaxWindScale", "0.8", true, true ) --[[ FLOAT ]]
+
+CreateClientConVar( "finos_cl_wind_ActivateWildWind", "0", true, true )
+CreateClientConVar( "finos_cl_wind_MinWildWindScale", "1", true, true ) --[[ FLOAT ]]
+CreateClientConVar( "finos_cl_wind_MaxWildWindScale", "1.13", true, true ) --[[ FLOAT ]]
+
+CreateClientConVar( "finos_cl_wind_ActivateThermalWind", "0", true, true )
+CreateClientConVar( "finos_cl_wind_MaxThermalLiftWindScale", "36", true, true ) --[[ FLOAT ]]
 
 -- Global variables
 if SERVER then
@@ -83,7 +108,7 @@ if SERVER then
     FINOS_DEFAULT_SCALAR_LIFT_FORCE_VALUE = 1
 
     -- Increase this if a big duplication change is added
-    FINOS_DUPLICATIONSSETTING_VERSION_CONTROL = 1
+    FINOS_DUPLICATIONSSETTING_VERSION_CONTROL = 2
 
 end
 
@@ -130,9 +155,11 @@ end
 hook.Add( "Initialize", "fin_os:Initialize", function()
 
     -- Add Network Strings
-    util.AddNetworkString("FINOS_UpdateEntityTableValue_CLIENT")
-    util.AddNetworkString("FINOS_SendLegacyNotification_CLIENT")
-    util.AddNetworkString("FINOS_SendEffect_CLIENT")
+    util.AddNetworkString( "FINOS_UpdateEntityTableValue_CLIENT" )
+    util.AddNetworkString( "FINOS_SendLegacyNotification_CLIENT" )
+    util.AddNetworkString( "FINOS_SendEffect_CLIENT" )
+
+    util.AddNetworkString( "FINOS_UpdateWindSettings_SERVER" )
 
 end )
 
@@ -153,8 +180,9 @@ if SERVER then
         if (
 
             Data[ "FINOS_DUPLICATIONSSETTING_VERSION_CONTROL" ] == FINOS_DUPLICATIONSSETTING_VERSION_CONTROL and
-            Data[ "AREAPOINTSTABLE" ] and Data[ "AREAVECTORSTABLE" ] and Data[ "AREAACCEPTEDANGLEANDHITNORMALTABLE" ] and
-            Data[ "ANGLEPROPERTIESTABLE" ] and Data[ "PHYSICSPROPERTIESSTABLE" ]
+            Data[ "AREAPOINTSTABLE" ] and Data[ "FORWARDDIRECTIONPOINTSTABLE" ] and Data[ "AREAVECTORSTABLE" ] and
+            Data[ "AREAACCEPTEDANGLEANDHITNORMALTABLE" ] and Data[ "ANGLEPROPERTIESTABLE" ] and Data[ "PHYSICSPROPERTIESSTABLE" ] and
+            Data[ "WINDPROPERTIESTABLE" ]
 
         ) then
 
@@ -168,6 +196,8 @@ if SERVER then
             FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal", Data[ "AREAACCEPTEDANGLEANDHITNORMALTABLE" ], nil, "ID12", true )
             FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAngleProperties", Data[ "ANGLEPROPERTIESTABLE" ], nil, "ID6", true )
             FINOS_AddDataToEntFinTable( Entity, "fin_os__EntPhysicsProperties", Data[ "PHYSICSPROPERTIESSTABLE" ], nil, "ID7", true )
+            FINOS_AddDataToEntFinTable( Entity, "fin_os__EntWindProperties", Data[ "WINDPROPERTIESTABLE" ], nil, "ID2_Wind", true )
+            FINOS_AddDataToEntFinTable( Entity, "fin_os__EntForwardDirectionPoints", Data[ "FORWARDDIRECTIONPOINTSTABLE" ], nil, "ID7.3", true )
 
             -- For duplication ( finding and setting the flap )
             Entity[ "FinOS_data" ][ "fin_os_fin_has_a_flap" ] = Data[ "FIN_HAS_A_FLAP" ]
@@ -178,6 +208,7 @@ if SERVER then
 
             local anyVectorLinesCrossingOrAngleHitNormalNotOK = false
 
+            -- Add Area points
             for k, v in pairs( AREAPOINTSTABLE ) do
 
                 if FINOS_FinOSFinMaxAmountReachedByPlayer( Entity, Player ) then return end
@@ -260,6 +291,60 @@ if SERVER then
         end
 
     end )
+
+end
+
+-- New forward direction ( for drag )
+function FINOS_SetNewForwardDirection( Entity, localPointAorB, ID )
+
+    -- For debugging
+    -- print( "FINOS_SetNewForwardDirection:", ID )
+    local FORWARDDIRECTIONTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntForwardDirectionPoints", "ID11.3" )
+    if not FORWARDDIRECTIONTABLE then FORWARDDIRECTIONTABLE = {} end
+
+    local function ResetTable( ID )
+
+        -- For debugging
+        -- print( "ResetTable:", ID )
+
+        -- Reset
+        FORWARDDIRECTIONTABLE = { ForwardDirectionPoints = {} }
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntForwardDirectionPoints", FORWARDDIRECTIONTABLE, nil, ID, true )
+
+    end
+
+    -- First time
+    if not FORWARDDIRECTIONTABLE[ "ForwardDirectionPoints" ] then ResetTable( "ID8.5" ) end
+
+    -- Get how many points already exists
+    local pointsAmount = #FORWARDDIRECTIONTABLE[ "ForwardDirectionPoints" ]
+
+    -- Add vector points
+    if pointsAmount < 2 then
+
+        -- Insert
+        table.insert( FORWARDDIRECTIONTABLE[ "ForwardDirectionPoints" ], localPointAorB )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntForwardDirectionPoints", FORWARDDIRECTIONTABLE, nil, "ID8.3" )
+        pointsAmount = #FORWARDDIRECTIONTABLE[ "ForwardDirectionPoints" ]
+
+        -- Alert player
+        FINOS_AlertPlayer( "*Added a forward direction point: " .. pointsAmount .. " of 2", OWNER )
+        FINOS_SendNotification( "Added a forward direction point: " .. pointsAmount .. " of 2", FIN_OS_NOTIFY_GENERIC, OWNER, 1.8 )
+
+        -- Finished
+        if pointsAmount == 2 then
+
+            -- Alert player
+            FINOS_AlertPlayer( "*Added forward direction vector! Now continue with AREA POINTS", OWNER )
+            FINOS_SendNotification( "Added forward direction vector! Now continue with AREA POINTS", FIN_OS_NOTIFY_HINT, OWNER, 4 )
+
+        end
+
+        return true
+
+    end
+
+    return false
 
 end
 
@@ -410,34 +495,31 @@ function FINOS_SetAreaPointsForFin( tr, player, self )
     local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID7" )
     local amountOfPointsUsed = #AREAPOINTSTABLE
 
-    -- How accurate
-    local decimals = 0
-
     local entityAngles = Entity:GetAngles()
     local entityHitNormal = tr.HitNormal
 
     local isEAndShiftUsedToRotate = math.Round( math.abs( ( entityAngles[ 1 ] + entityAngles[ 2 ] + entityAngles[ 3 ] ) ), 1 ) % 1 <= 0.15
 
-    -- Just important if we have strict mode ON
-    if GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and not isEAndShiftUsedToRotate and self then
-
-        -- Kiss and tell
-        if OWNER and OWNER:IsValid() then
-
-            FINOS_AlertPlayer( [[*Rotate prop with "E" + "Shift" to make fin happy (´°ω°`)]], OWNER )
-            FINOS_SendNotification( [[Rotate prop with "E" + "Shift" to make fin happy (´°ω°`)]], FIN_OS_NOTIFY_ERROR, OWNER, 3 )
-
-        end
-
-        return true
-
-    end
-
-    local entityAnglesRounded = Angle( math.Round( entityAngles[ 1 ], decimals ), math.Round( entityAngles[ 2 ], decimals ), math.Round( entityAngles[ 3 ], decimals ) )
-    local entityHitNormalRounded = Vector( math.Round( entityHitNormal[ 1 ], decimals ), math.Round( entityHitNormal[ 2 ], decimals ), math.Round( entityHitNormal[ 3 ], decimals ) )
+    local entityAnglesRounded = Angle( math.Round( entityAngles[ 1 ], FINOS_DevationDecimalsAnglesAlign ), math.Round( entityAngles[ 2 ], FINOS_DevationDecimalsAnglesAlign ), math.Round( entityAngles[ 3 ], FINOS_DevationDecimalsAnglesAlign ) )
+    local entityHitNormalRounded = Vector( math.Round( entityHitNormal[ 1 ] ), math.Round( entityHitNormal[ 2 ] ), math.Round( entityHitNormal[ 3 ] ) )
 
     -- ** Når du treffer overflate, berre aksepter videre: avrundar lokale HitNormal + lokale avrunda vinkelen til (tre desimaler) prop
     if amountOfPointsUsed == 0 then
+
+        -- Just important if we have strict mode ON
+        if GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and not isEAndShiftUsedToRotate and self then
+
+            -- Kiss and tell
+            if OWNER and OWNER:IsValid() then
+
+                FINOS_AlertPlayer( [[*Rotate prop with "E" + "Shift" to make fin happy (´°ω°`)]], OWNER )
+                FINOS_SendNotification( [[Rotate prop with "E" + "Shift" to make fin happy (´°ω°`)]], FIN_OS_NOTIFY_ERROR, OWNER, 3 )
+
+            end
+
+            return true
+
+        end
 
         FINOS_AddDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal", {
 
@@ -451,27 +533,42 @@ function FINOS_SetAreaPointsForFin( tr, player, self )
     -- Just important if we have strict mode ON
     -- Check if point is going to be accepted
     local acceptedAngleAndHitNormal = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaAcceptedAngleAndHitNormal","ID18" )
+
+    local angP1, angP2 = entityAnglesRounded.p, acceptedAngleAndHitNormal[ "firstPointSet_Angles" ].p
+    local angY1, angY2 = entityAnglesRounded.y, acceptedAngleAndHitNormal[ "firstPointSet_Angles" ].y
+    local angR1, angR2 = entityAnglesRounded.r, acceptedAngleAndHitNormal[ "firstPointSet_Angles" ].r
+
+    local notAllowedAngles = ( math.abs( angP1 - angP2 ) > FINOS_AllowedDevationAnglesAlign or math.abs( angY1 - angY2 ) > FINOS_AllowedDevationAnglesAlign or math.abs( angR1 - angR2 ) > FINOS_AllowedDevationAnglesAlign )
+
+    -- Round them all off ater converting to local position
+    local hitNormal1 = ( entityHitNormalRounded )
+    hitNormal1 = Vector( math.Round( hitNormal1[ 1 ] ), math.Round( hitNormal1[ 2 ] ), math.Round( hitNormal1[ 3 ] ) )
+    local hitNormal2 = ( acceptedAngleAndHitNormal[ "firstPointSet_HitNormal" ] )
+    hitNormal2 = Vector( math.Round( hitNormal2[ 1 ] ), math.Round( hitNormal2[ 2 ] ), math.Round( hitNormal2[ 3 ] ) )
+
+    local notAllowedHitNormal = ( hitNormal1[ 1 ] ~= hitNormal2[ 1 ] or hitNormal1[ 2 ] ~= hitNormal2[ 2 ] or hitNormal1[ 3 ] ~= hitNormal2[ 3 ] )
+
     if (
 
-        GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and (
+        self and GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and (
 
-            entityAnglesRounded ~= acceptedAngleAndHitNormal[ "firstPointSet_Angles" ] or
-            entityHitNormalRounded ~= acceptedAngleAndHitNormal[ "firstPointSet_HitNormal" ]
-        ) and self
+            notAllowedAngles or notAllowedHitNormal
+
+        )
 
     ) then
 
         -- --Tell player
-        if entityAnglesRounded ~= acceptedAngleAndHitNormal[ "firstPointSet_Angles" ] then
+        if notAllowedAngles then
 
-            FINOS_AlertPlayer( "*Align fin to the correct start angle!", OWNER )
-            FINOS_SendNotification( "Align fin to the correct start angle!", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
-    
-        elseif entityHitNormalRounded ~= acceptedAngleAndHitNormal[ "firstPointSet_HitNormal" ] then
-    
-            FINOS_AlertPlayer( "*You can only apply new points on one side of the FIN OS fin!", OWNER )
-            FINOS_SendNotification( "You can only apply new points on one side of the fin!", FIN_OS_NOTIFY_ERROR, OWNER, 3 )
-    
+            FINOS_AlertPlayer( "*Align the FIN OS fin to the correct START ANGLES first!", OWNER )
+            FINOS_SendNotification( "Align fin to the correct START ANGLES first!", FIN_OS_NOTIFY_ERROR, OWNER, 4 )
+
+        elseif notAllowedHitNormal then
+
+            FINOS_AlertPlayer( "*You can only apply new points on ONE SIDE of the FIN OS fin!", OWNER )
+            FINOS_SendNotification( "You can only apply new points on ONE SIDE of the fin!", FIN_OS_NOTIFY_ERROR, OWNER, 4 )
+
         end
 
         return true
@@ -1015,7 +1112,8 @@ function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity
     -- local g_CONSTANT_ACCELERTATION = 600 * 0.01635 -- 600 = default gravity. 600 * 0.01635 = 9.81
 
     -- ** The LIFT Force **
-    local CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = ( 0.5 * RhoMassDensity * math.pow( VelocityMetersPerSecond, 2 ) * AreaMeter ) * 0.15071 -- <-- '* 0.15071' Makes is more realistic, if you use the equation F = ma
+    local CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = ( 0.5 * RhoMassDensity * math.pow( VelocityMetersPerSecond, 2 ) * AreaMeter )
+    -- local CURRENT_LIFT_FORCE_IN_NEWTONS = ( CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE * CURRENT_CL )
     local CURRENT_LIFT_FORCE_IN_NEWTONS = ( CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE * CURRENT_CL )
 
     -- ** The LIFT Force used IN-GAME **
@@ -1026,6 +1124,7 @@ function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity
         local NEW_CURRENT_CL = 2 * math.pi * math.rad( CURRENT_ATTACK_ANGLE_DEGREES_PRE )
         FLAP_LIFT_FORCE_NEWTON = ( 0.5 * RhoMassDensity * math.pow( VelocityMetersPerSecond, 2 ) * AreaMeter * NEW_CURRENT_CL )
 
+        CURRENT_CL = NEW_CURRENT_CL
         CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED = ( FLAP_LIFT_FORCE_NEWTON * Scalar )
 
     else
@@ -1038,8 +1137,8 @@ function FINOS_CalculateLiftForce( ent, AttackAnglesDegreesTable, RhoMassDensity
 
         CURRENT_LIFT_FORCE_IN_NEWTONS = CURRENT_LIFT_FORCE_IN_NEWTONS,
         CURRENT_LIFT_FORCE_IN_NEWTONS_REALISTIC = CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED,
-        CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED = CURRENT_LIFT_FORCE_IN_NEWTONS_MODIFIED * 2,
-        CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE
+        CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE = CURRENT_LIFT_FORCE_IN_NEWTONS_WITHOUTATTACKANGLE,
+        CL = CURRENT_CL
 
     }
 
@@ -1048,6 +1147,10 @@ end
 -- Duplication settings for a fin
 function FINOS_WriteDuplicatorDataForEntity( EntityPhysPropNotFinBrain ) -- The new entity will have this data
 
+    local FORWARDDIRECTIONPOINTSTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntForwardDirectionPoints", "ID3.3" )
+    --[[ IDs:
+        ForwardDirectionPoints: Array<Vector(x, y, z), Vector(x, y, z)>
+     ]]
     local AREAPOINTSTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaPoints", "ID3" )
     --[[ IDs:
         vCPLFin_Area_Units = Int
@@ -1058,7 +1161,7 @@ function FINOS_WriteDuplicatorDataForEntity( EntityPhysPropNotFinBrain ) -- The 
     local AREAVECTORSTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaVectors", "ID4" )
     --[[ Array:
         Vector(x, y, z), Vector(x, y, z), Vector(x, y, z) ...
-     ]]
+    ]]
     local AREAVECTORSLINESPARAMETERTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaVectorLinesParameter", "ID20" )
     --[[ Array:
         equation1 = { x = Int, a = Int }
@@ -1074,7 +1177,7 @@ function FINOS_WriteDuplicatorDataForEntity( EntityPhysPropNotFinBrain ) -- The 
             RHSLocalCrossingPoint = Int
             crossingLines = true
         }
-     ]]
+    ]]
     local AREAACCEPTEDANGLEANDHITNORMALTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntAreaAcceptedAngleAndHitNormal", "ID22" )
     --[[ IDs:
         firstPointSet_Angles = Angles
@@ -1085,20 +1188,38 @@ function FINOS_WriteDuplicatorDataForEntity( EntityPhysPropNotFinBrain ) -- The 
         BaseAngle = Angles
         AttackAngle_Pitch = Int
         AttackAngle_RollCosinus = Int
-     ]]
+    ]]
     local PHYSICSPROPERTIESSTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntPhysicsProperties", "ID6" )
     --[[ IDs:
         VelocityKmH = Int
+        LiftForceNewtonsModified_realistic = Int
         LiftForceNewtonsModified_beingUsed = Int
         LiftForceNewtonsNotModified = Int
+        DragForceNewtons = Int
         AreaMeterSquared = Int
         FinOS_LiftForceScalarValue = Int
+        FinOS_LiftForceScalarValue_Normal = Int
+        FinOS_LiftForceScalarValue_Wiremod = Int
+        FINOS_WindAmountNewtonsForArea = Int
+     ]]
+    local WINDPROPERTIESTABLE = FINOS_GetDataToEntFinTable( EntityPhysPropNotFinBrain, "fin_os__EntWindProperties", "ID1_Wind" )
+    --[[ IDs:
+        EnableWind = Int
+        ForcePerSquareMeterArea = Float
+        MinWindScale = Float
+        MaxWindScale = Float
+        ActivateWildWind = Int
+        MinWildWindScale = Float
+        MaxWildWindScale = Float
+        ActivateThermalWind = Int
+        MaxThermalLiftWindScale = Float
      ]]
 
     -- Create a new table to store in duplicator settings for the entity
     local Data = {
 
         FINOS_DUPLICATIONSSETTING_VERSION_CONTROL   = FINOS_DUPLICATIONSSETTING_VERSION_CONTROL,
+        FORWARDDIRECTIONPOINTSTABLE                 = FORWARDDIRECTIONPOINTSTABLE,
         AREAPOINTSTABLE                             = AREAPOINTSTABLE,
         AREAVECTORSTABLE                            = AREAVECTORSTABLE,
         AREAVECTORSLINESPARAMETERTABLE              = AREAVECTORSLINESPARAMETERTABLE,
@@ -1106,6 +1227,7 @@ function FINOS_WriteDuplicatorDataForEntity( EntityPhysPropNotFinBrain ) -- The 
         AREAACCEPTEDANGLEANDHITNORMALTABLE          = AREAACCEPTEDANGLEANDHITNORMALTABLE,
         ANGLEPROPERTIESTABLE                        = ANGLEPROPERTIESTABLE,
         PHYSICSPROPERTIESSTABLE                     = PHYSICSPROPERTIESSTABLE,
+        WINDPROPERTIESTABLE                         = WINDPROPERTIESTABLE,
         FIN_HAS_A_FLAP                              = EntityPhysPropNotFinBrain[ "FinOS_data" ][ "fin_os_fin_has_a_flap" ]
 
     }
@@ -1162,6 +1284,9 @@ function FINOS_AddFinWingEntity( ent, owner )
     local prevFinOSBrain = ent:GetNWEntity( "fin_os_brain" )
     local prevFinOSBrainValid = prevFinOSBrain and prevFinOSBrain:IsValid()
 
+    -- Set the now current owner ( for use with wind, when adjusting settings )
+    ent:SetNWEntity( "fin_os_currentOwner", owner )
+
     -- Make a fin wing
     local entFin = prevFinOSBrain
 
@@ -1194,6 +1319,23 @@ function FINOS_AddFinWingEntity( ent, owner )
 
     -- For Wiremod
     FINOS_AddDataToEntFinTable( ent, "fin_os__Wiremod_InputValues", {}, nil, "ID0_Wiremod", true )
+
+    -- For Wind
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntWindProperties", {
+
+        EnableWind = GetConVar( "finos_cl_wind_EnableWind" ):GetInt(),
+        ForcePerSquareMeterArea = GetConVar( "finos_cl_wind_ForcePerSquareMeterArea" ):GetFloat(),
+        MinWindScale = GetConVar( "finos_cl_wind_MinWindScale" ):GetFloat(),
+        MaxWindScale = GetConVar( "finos_cl_wind_MaxWindScale" ):GetFloat(),
+
+        ActivateWildWind = GetConVar( "finos_cl_wind_ActivateWildWind" ):GetInt(),
+        MinWildWindScale = GetConVar( "finos_cl_wind_MinWildWindScale" ):GetFloat(),
+        MaxWildWindScale = GetConVar( "finos_cl_wind_MaxWildWindScale" ):GetFloat(),
+
+        ActivateThermalWind = GetConVar( "finos_cl_wind_ActivateThermalWind" ):GetInt(),
+        MaxThermalLiftWindScale = GetConVar( "finos_cl_wind_MaxThermalLiftWindScale" ):GetFloat()
+
+    }, nil, "ID3_Wind", true )
 
     if not prevFinOSBrainValid and not game.SinglePlayer() then owner:SetNWInt( "fin_os_ent_amount", owner:GetNWInt( "fin_os_ent_amount", 0 ) + 1 ) end
 
@@ -1313,6 +1455,7 @@ function FINOS_RemoveFinAndDataFromEntity( ent, owner, onlyBasicCleaning, ignore
 
     -- CLEAN UP
     -- Empty all data
+    FINOS_AddDataToEntFinTable( ent, "fin_os__EntForwardDirectionPoints", nil )
     FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaPoints", nil )
     FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaVectors", nil )
     FINOS_AddDataToEntFinTable( ent, "fin_os__EntAreaVectorLinesParameter", nil )

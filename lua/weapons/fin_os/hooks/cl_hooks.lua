@@ -83,6 +83,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 local speed = math.Round( FinPhysicsPropertiesTable[ "VelocityKmH" ] )
                 local force_lift = math.Round( FinPhysicsPropertiesTable[ "LiftForceNewtonsModified_realistic" ] )
+                local force_drag = math.Round( FinPhysicsPropertiesTable[ "DragForceNewtons" ] )
                 local area_meter_squared = math.Round( FinPhysicsPropertiesTable[ "AreaMeterSquared" ], 2 )
                 local liftForceScalarValue = FinPhysicsPropertiesTable[ "FinOS_LiftForceScalarValue" ]
 
@@ -159,10 +160,20 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 )
                 draw.DrawText(
 
+                    "Force[DRAG]: " .. force_drag.. " N",
+                    textType,
+                    ( backgroundPosX + 20 ),
+                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 2.1 ),
+                    textColor,
+                    TEXT_ALIGN_LEFT
+
+                )
+                draw.DrawText(
+
                     "Area: " .. area_meter_squared.. " m²",
                     textType,
                     ( backgroundPosX + 20 ),
-                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 3 ),
+                    ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 3 + 5 ),
                     textColor,
                     TEXT_ALIGN_LEFT
 
@@ -181,7 +192,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 
                 draw.DrawText(
 
-                    "Scalar ( Force[LIFT] ): " .. liftForceScalarValue,
+                    "Scalar ( Force[LIFT/DRAG] ): " .. liftForceScalarValue,
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 * 3 + 10 * 2 + 10 * 4 + 20 * 2 ),
@@ -270,7 +281,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
         if EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "fin_os" then
 
-            local backgroundPosX = ( ScrW() - 300 - 20 )
+            local backgroundPosX = ( ScrW() - 300 - 30 )
             local backgroundPosY = 60 + 37
 
             local textColor = Color( 255, 255, 255, 255 )
@@ -279,7 +290,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 backgroundPosX,
                 backgroundPosY - 8,
-                300,
+                310,
                 156 + someExtra001,
                 Color( 247, 245, 162, 220 )
 
@@ -297,7 +308,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                     "E" + Middle Mouse Button for Settings Panel
                 ]],
                 "GModToolHelp",
-                ( backgroundPosX - 97 + 20 ),
+                ( backgroundPosX - 97 + 25 ),
                 ( backgroundPosY + 20 ),
                 Color( 70, 73, 72),
                 TEXT_ALIGN_LEFT
@@ -352,6 +363,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
             local speed = math.Round( PHYSICSPROPERTIESSTABLE[ "VelocityKmH" ] )
             local force_lift = math.Round( PHYSICSPROPERTIESSTABLE[ "LiftForceNewtonsModified_realistic" ] )
+            local force_drag = math.Round( PHYSICSPROPERTIESSTABLE[ "DragForceNewtons" ] )
             local area_meter_squared = math.Round( PHYSICSPROPERTIESSTABLE[ "AreaMeterSquared" ], 2 )
 
             draw.RoundedBox( 8,
@@ -359,7 +371,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 backgroundPosX,
                 backgroundPosY,
                 width,
-                77,
+                93,
                 Color( 170, 238, 255, 203 )
 
             )
@@ -402,7 +414,17 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 "Force[LIFT]: " .. force_lift.. " N",
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
-                ( backgroundPosY + 8 * 3 + 12 * 2 + 4 ),
+                ( backgroundPosY + 8 * 3 + 12 * 2 + 4 + 7.5 ),
+                textColor,
+                TEXT_ALIGN_LEFT
+
+            )
+            draw.DrawText(
+
+                "Force[DRAG]: " .. force_drag.. " N",
+                "DermaDefaultBold",
+                ( backgroundPosX + 10 ),
+                ( backgroundPosY + 8 * 3 + 12 * 2 + 4 * 4 + 7.5 ),
                 textColor,
                 TEXT_ALIGN_LEFT
 
@@ -416,12 +438,234 @@ end )
 
 hook.Add("HUDShouldDraw", "fin_os:HUDShouldDraw", function( name )
 
-    local Player = LocalPlayer();
+    local Player = LocalPlayer()
 
 	-- When Player is in slow motion
-	if EntTruty (Player ) and Player:GetNWBool( "PlayerIsLookingAtFinAndChangingScalarValue" ) and name == "CHudWeaponSelection" then return false end
+	if EntTruty ( Player ) and Player:GetNWBool( "PlayerIsLookingAtFinAndChangingScalarValue" ) and name == "CHudWeaponSelection" then return false end
 
 end )
+
+local function FINOS_DrawGrid( Entity, type )
+
+    if ( not EntTruty( LocalPlayer() ) or not EntTruty( Entity ) ) or LocalPlayer():GetPos():DistToSqr( Entity:GetPos() ) > 203210 then return nil end
+
+    -- Size of grid
+    local amountX = GetConVar( "finos_cl_gridSizeX" ):GetFloat() or 9
+    local amountY = GetConVar( "finos_cl_gridSizeY" ):GetFloat() or 9
+
+    local localMinPoint     = Entity:OBBMins()
+    local localMaxPoint     = Entity:OBBMaxs()
+    local localCenterPoint  = Entity:OBBCenter()
+
+    local minPosPoint1
+    local maxPosPoint1
+
+    local minPosPoint2
+    local maxPosPoint2
+
+    local minPosPoint3
+    local maxPosPoint3
+
+    local centerPos
+
+    if type == "Front" then
+
+        minPosPoint1 = localMaxPoint[ 1 ] -- X
+        maxPosPoint1 = localMaxPoint[ 1 ] -- X
+
+        minPosPoint2 = localMinPoint[ 2 ] -- Y
+        maxPosPoint2 = localMaxPoint[ 2 ] -- Y
+
+        minPosPoint3 = localMinPoint[ 3 ] -- Z
+        maxPosPoint3 = localMaxPoint[ 3 ] -- Z
+
+        centerPos = localCenterPoint[ 3 ] -- Z
+
+    elseif type == "Back" then
+
+        minPosPoint1 = localMinPoint[ 1 ] -- X
+        maxPosPoint1 = localMinPoint[ 1 ] -- X
+
+        minPosPoint2 = localMinPoint[ 2 ] -- Y
+        maxPosPoint2 = localMaxPoint[ 2 ] -- Y
+
+        minPosPoint3 = localMinPoint[ 3 ] -- Z
+        maxPosPoint3 = localMaxPoint[ 3 ] -- Z
+
+        centerPos = localCenterPoint[ 3 ] -- Z
+
+    elseif type == "Top" then
+
+        minPosPoint1 = localMaxPoint[ 3 ] * -1 -- Z
+        maxPosPoint1 = localMaxPoint[ 3 ] * -1 -- Z
+
+        minPosPoint2 = localMinPoint[ 2 ] -- X
+        maxPosPoint2 = localMaxPoint[ 2 ] -- X
+
+        minPosPoint3 = localMinPoint[ 1 ] -- Y
+        maxPosPoint3 = localMaxPoint[ 1 ] -- Y
+
+        centerPos = localCenterPoint[ 1 ] -- Y
+    elseif type == "Bottom" then
+
+        minPosPoint1 = localMinPoint[ 3 ] * -1 -- Z
+        maxPosPoint1 = localMinPoint[ 3 ] * -1 -- Z
+
+        minPosPoint2 = localMinPoint[ 2 ] -- Y
+        maxPosPoint2 = localMaxPoint[ 2 ] -- Y
+
+        minPosPoint3 = localMinPoint[ 1 ] -- X
+        maxPosPoint3 = localMaxPoint[ 1 ] -- X
+
+        centerPos = localCenterPoint[ 1 ] -- X
+    elseif type == "Right" then
+
+        minPosPoint1 = localMaxPoint[ 2 ] -- Y
+        maxPosPoint1 = localMaxPoint[ 2 ] -- Y
+
+        minPosPoint2 = localMinPoint[ 1 ] -- X
+        maxPosPoint2 = localMaxPoint[ 1 ] -- X
+
+        minPosPoint3 = localMinPoint[ 3 ] -- Z
+        maxPosPoint3 = localMaxPoint[ 3 ] -- Z
+
+        centerPos = localCenterPoint[ 3 ] -- Z
+    elseif type == "Left" then
+
+        minPosPoint1 = localMinPoint[ 2 ] -- Y
+        maxPosPoint1 = localMinPoint[ 2 ] -- Y
+
+        minPosPoint2 = localMinPoint[ 1 ] -- X
+        maxPosPoint2 = localMaxPoint[ 1 ] -- X
+
+        minPosPoint3 = localMinPoint[ 3 ] -- Z
+        maxPosPoint3 = localMaxPoint[ 3 ] -- Z
+
+        centerPos = localCenterPoint[ 3 ] -- Z
+
+    else print( "FINOS: Didn't find any matching type for grid.: Front, Back, Top, Bottom, Left or Right." ) return nil end
+
+    local _color = Color( 228, 15, 15, 150)
+
+    local loopCount1 = maxPosPoint3
+    local loopCount2 = maxPosPoint2
+
+    centerPos = math.Round( centerPos )
+
+    local function RotateVector( vec1, vec2 )
+
+        if type == "Top" or type == "Bottom" then
+
+            vec1:Rotate( Angle( 90, 0, 0 ) )
+            vec2:Rotate( Angle( 90, 0, 0 ) )
+
+        elseif type == "Left" or type == "Right" then
+
+            vec1:Rotate( Angle( 0, 90, 0 ) )
+            vec2:Rotate( Angle( 0, 90, 0 ) )
+
+        end
+
+    end
+    local function DrawTheLine( vec1, vec2 )
+
+        RotateVector( vec1, vec2 )
+
+        render.DrawLine(
+            Entity:LocalToWorld( vec1 ),
+            Entity:LocalToWorld( vec2 ),
+            _color, true
+        )
+
+    end
+
+    -- Center to Top
+    for i = 0, math.abs( loopCount1 ) do
+
+        local zPos = ( i * amountY ) + centerPos
+        render.SetMaterial( Material( "color" ) )
+
+        local vec1 = Vector( minPosPoint1, minPosPoint2, zPos )
+        local vec2 = Vector( maxPosPoint1, maxPosPoint2, zPos )
+
+        -- Normal
+        if zPos < math.abs( maxPosPoint3 ) then DrawTheLine( vec1, vec2 ) else
+
+            -- Outer line
+            vec1 = Vector( minPosPoint1, minPosPoint2, maxPosPoint3 )
+            vec2 = Vector( maxPosPoint1, maxPosPoint2, maxPosPoint3 )
+
+            DrawTheLine( vec1, vec2 )
+
+            break;
+        end
+
+    end
+    -- Center to Bottom
+    for i = 0, math.abs( loopCount1 ) do
+
+        local zPos = ( ( i * amountY * -1 ) + centerPos )
+        render.SetMaterial( Material( "color" ) )
+
+        local vec1 = Vector( minPosPoint1, minPosPoint2, zPos )
+        local vec2 = Vector( maxPosPoint1, maxPosPoint2, zPos )
+
+        local checkAgains = ( zPos > 0 )
+        if centerPos == 0 then checkAgains = ( math.abs( zPos ) < maxPosPoint3 ) end
+
+        if checkAgains then DrawTheLine( vec1, vec2 ) else
+            -- Outer line
+            vec1 = Vector( minPosPoint1, minPosPoint2, minPosPoint3 )
+            vec2 = Vector( maxPosPoint1, maxPosPoint2, minPosPoint3 )
+
+            DrawTheLine( vec1, vec2 )
+
+            break;
+        end
+
+    end
+    -- Right side
+    for i = 0, math.abs( loopCount2 ) do
+
+        local yPos = ( i * amountX )
+        render.SetMaterial( Material( "color" ) )
+
+        local vec1 = Vector( minPosPoint1, yPos, minPosPoint3 )
+        local vec2 = Vector( maxPosPoint1, yPos, maxPosPoint3 )
+
+        if yPos < math.abs( maxPosPoint2 ) then DrawTheLine( vec1, vec2 ) else
+            -- Outer line
+            vec1 = Vector( minPosPoint1, maxPosPoint2, minPosPoint3 )
+            vec2 = Vector( maxPosPoint1, maxPosPoint2, maxPosPoint3 )
+
+            DrawTheLine( vec1, vec2 )
+
+            break;
+        end
+
+    end
+    -- Left side
+    for i = 0, math.abs( loopCount2 ) do
+
+        local yPos = ( i * amountX * -1 )
+        render.SetMaterial( Material( "color" ) )
+
+        local vec1 = Vector( minPosPoint1, yPos, minPosPoint3 )
+        local vec2 = Vector( maxPosPoint1, yPos, maxPosPoint3 )
+
+        if yPos > ( math.abs( minPosPoint2 ) * -1 ) then DrawTheLine( vec1, vec2 ) else
+            -- Outer line
+            vec1 = Vector( minPosPoint1, minPosPoint2, minPosPoint3 )
+            vec2 = Vector( maxPosPoint1, minPosPoint2, maxPosPoint3 )
+
+            DrawTheLine( vec1, vec2 )
+
+            break;
+        end
+
+    end
+
+end
 
 hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", function( isDrawingDepth, isDrawSkybox )
 
@@ -433,9 +677,22 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
         local Entity = tr.Entity
 
+        local FinForwardPointsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntForwardDirectionPoints", "ID16.3" )
+        local FinAreaPointsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID16" )
+
         if EntTruty( Entity ) and EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "fin_os" then
 
-            local FinAreaPointsTable = FINOS_GetDataToEntFinTable( Entity, "fin_os__EntAreaPoints", "ID16" )
+            if not FinForwardPointsTable or not FinForwardPointsTable[ "ForwardDirectionPoints" ] or #FinForwardPointsTable[ "ForwardDirectionPoints" ] < 2 then
+
+                -- Draw grid on all sides
+                FINOS_DrawGrid( Entity, "Front" )
+                FINOS_DrawGrid( Entity, "Back" )
+                FINOS_DrawGrid( Entity, "Top" )
+                FINOS_DrawGrid( Entity, "Bottom" )
+                FINOS_DrawGrid( Entity, "Right" )
+                FINOS_DrawGrid( Entity, "Left" )
+
+            end
 
             if Entity:GetNWBool( "fin_os_active" ) then
 
@@ -471,10 +728,12 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
                     point1 = Entity:LocalToWorld( v )
                     point2 = Entity:LocalToWorld( FinAreaPointsTable[ k + 1 ] )
 
+                    render.SetMaterial( Material( "color" ) )
                     render.DrawLine( point1, point2, Color( 170, 255, 170 ), true )
 
                     if ( k + 1 ) == #FinAreaPointsTable then
 
+                        render.SetMaterial( Material( "color" ) )
                         render.DrawLine( point2, Entity:LocalToWorld( FinAreaPointsTable[ 1 ] ), Color( 99, 240, 250 ), true )
 
                     end
@@ -510,6 +769,34 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
 
         end
 
+        if GetConVar("finos_cl_enableForwardDirectionArrow"):GetInt() == 1 and EntTruty( Entity ) then
+
+            -- Draw forward direction arrow
+            if FinForwardPointsTable and FinForwardPointsTable[ "ForwardDirectionPoints" ] and #FinForwardPointsTable[ "ForwardDirectionPoints" ] == 2 then
+
+                local FinForwardFirstPoint = FinForwardPointsTable[ "ForwardDirectionPoints" ][ 1 ]
+                local FinForwardLastPoint = FinForwardPointsTable[ "ForwardDirectionPoints" ][ 2 ]
+
+                local arrowScale = 5
+
+                local FinForwardLastPointArrowLeftPoint = FinForwardLastPoint - Vector( 0, arrowScale, arrowScale )
+                local FinForwardLastPointArrowRightPoint = FinForwardLastPoint - Vector( 0, arrowScale * -1, arrowScale )
+
+                local _color = Color( 223, 201, 2, 200 )
+
+                -- Middle line
+                render.SetMaterial( Material( "color" ) )
+                render.DrawLine( Entity:LocalToWorld( FinForwardFirstPoint ), Entity:LocalToWorld( FinForwardLastPoint ), _color, true )
+
+                local spriteSize, size = 30, 5
+
+                render.SetMaterial( Material( "sprites/light_ignorez" ) )
+                render.DrawSprite( Entity:LocalToWorld( FinForwardLastPoint ), spriteSize, ( spriteSize / ( spriteSize / size ) ), Color( 6, 212, 240, 200) )
+                render.DrawSprite( Entity:LocalToWorld( FinForwardLastPoint ), ( spriteSize / ( spriteSize / size ) ), spriteSize, Color( 158, 240, 6, 200) )
+            end
+
+        end
+
         -- Just important if we have strict mode ON
         -- Tell the Player visually whats going on
         if GetConVar( "finos_disablestrictmode" ):GetInt() ~= 1 and EntTruty( Entity ) and EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and ( Player:GetActiveWeapon():GetClass() == "weapon_physgun" or Player:GetActiveWeapon():GetClass() == "fin_os" ) then
@@ -525,22 +812,33 @@ hook.Add( "PreDrawTranslucentRenderables", "fin_os:fin_area_visualizer", functio
             local isEAndShiftUsedToRotate = math.Round( math.abs( ( FinCurrentAngles[ 1 ] + FinCurrentAngles[ 2 ] + FinCurrentAngles[ 3 ] ) ), 1 ) % 1 <= 0
 
             local entMaxes = Entity:OBBMaxs()
+            local amountOfPointsUsed = #FinAreaPointsTable
 
             -- Only for physgun
-            if Entity:GetNWBool( "fin_os_active" ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "weapon_physgun" then
+            if GetConVar("finos_disablestrictmode"):GetInt() ~= 1 and GetConVar("finos_cl_enableAlignAngleHelpers"):GetInt() == 1 and amountOfPointsUsed > 0 and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() == "weapon_physgun" then
 
                 local colorSignal1 = Color( 200, 170, 255 )
                 local colorSignal2 = Color( 200, 170, 255 )
                 local colorSignal3 = Color( 200, 170, 255 )
-                if FinAcceptedAnglesRounded[ 1 ] - FinCurrentAnglesRounded[ 1 ] <= 0.15 and FinCurrentAnglesRounded[ 1 ] == FinAcceptedAnglesRounded[ 1 ] then colorSignal1 = Color( 170, 255, 170 ) end
-                if FinAcceptedAnglesRounded[ 2 ] - FinCurrentAnglesRounded[ 2 ] <= 0.15 and FinCurrentAnglesRounded[ 2 ] == FinAcceptedAnglesRounded[ 2 ] then colorSignal2 = Color( 170, 255, 170 ) end
-                if FinAcceptedAnglesRounded[ 3 ] - FinCurrentAnglesRounded[ 3 ] <= 0.15 and FinCurrentAnglesRounded[ 3 ] == FinAcceptedAnglesRounded[ 3 ] then colorSignal3 = Color( 170, 255, 170 ) end
+
+                local angP1, angP2 = FinCurrentAnglesRounded.p, FinAcceptedAnglesRounded.p
+                local angY1, angY2 = FinCurrentAnglesRounded.y, FinAcceptedAnglesRounded.y
+                local angR1, angR2 = FinCurrentAnglesRounded.r, FinAcceptedAnglesRounded.r
+
+                local notAllowedAnglesP = ( math.abs( angP1 - angP2 ) <= FINOS_AllowedDevationAnglesAlign )
+                local notAllowedAnglesY = ( math.abs( angY1 - angY2 ) <= FINOS_AllowedDevationAnglesAlign )
+                local notAllowedAnglesR = ( math.abs( angR1 - angR2 ) <= FINOS_AllowedDevationAnglesAlign )
+
+                if notAllowedAnglesP then colorSignal1 = Color( 170, 255, 170 ) end
+                if notAllowedAnglesY then colorSignal2 = Color( 170, 255, 170 ) end
+                if notAllowedAnglesR then colorSignal3 = Color( 170, 255, 170 ) end
+
+                local spriteSize = 40
 
                 render.SetMaterial( Material( "sprites/light_ignorez" ) )
-
-                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z ) ), 50, 50, colorSignal1 )
-                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z - 10 ) ), 50, 50, colorSignal2 )
-                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z - 10 * 2 ) ), 50, 50, colorSignal3 )
+                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z - 10 * 0 ) ), spriteSize, spriteSize, colorSignal1 )
+                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z - 10 * 1 ) ), spriteSize, spriteSize, colorSignal2 )
+                render.DrawSprite( Entity:LocalToWorld( entMaxes - Vector( 0, entMaxes.y, entMaxes.z - 10 * 2 ) ), spriteSize, spriteSize, colorSignal3 )
 
             end
 
@@ -642,8 +940,10 @@ local middleMouseButtonDownOnce = false
 local middleMouseButtonDownOnce2 = false
 
 local openSettingsPanel
-local settingsPanelWidth = 400
-local settingsPanelheight = 200
+local settingsPanelWidth = 900
+local settingsPanelWidthLeftSide = 400
+local settingsPanelWidthRightSide = ( 500 - 10 )
+local settingsPanelheight = 420
 local lastSavedPanelPositions = { ScrW() / 2 - settingsPanelWidth / 2, ScrH() / 2 - settingsPanelheight / 2 }
 
 local function createUserSettingsPanel()
@@ -656,6 +956,12 @@ local function createUserSettingsPanel()
     DermaPanel:SetDraggable( true )
     DermaPanel:MakePopup()
 
+    DermaPanel.Paint = function( s, w, h )
+        draw.RoundedBox(8, 0, 0, w, h,
+            Color(27, 11, 247, 206)
+        )
+    end
+
     function DermaPanel:OnClose()
 
         local x, y = DermaPanel:GetPos()
@@ -667,18 +973,195 @@ local function createUserSettingsPanel()
 
     end
 
+    local function addItemBooleanClientSide( text, conVarId, paddingTop, parentPanel, textColor, backgroundColor )
+
+        if not LocalPlayer():IsAdmin() then return end
+
+        local RulePanel = ( parentPanel or DermaPanel ):Add( "DPanel" ) -- Create container for this item
+        if paddingTop then RulePanel:DockMargin( 0, paddingTop, 0, 0 ) else RulePanel:DockMargin( 0, 2, 0, 0 ) end
+
+        RulePanel.Paint = function () end
+
+        local CheckBox = RulePanel:Add( "DCheckBoxLabel" )
+        CheckBox:Dock( LEFT ) -- Dock it
+        CheckBox:SetText( "Check" )
+        CheckBox:SetConVar( conVarId )
+        CheckBox:SetValue( true )
+        CheckBox:SetSize( 0, 0 )
+
+        local ImageCheckBox = RulePanel:Add( "ImageCheckBox" ) -- Create checkbox with image
+        ImageCheckBox:SetMaterial( "icon16/accept.png" ) -- Set its image
+        ImageCheckBox:SetWidth( 24 ) -- Make the check box a bit wider than the image so it looks nicer
+        ImageCheckBox:Dock( LEFT ) -- Dock it
+        ImageCheckBox:SetChecked( GetConVar( conVarId ):GetInt() > 0 )
+
+        ImageCheckBox.Paint = function( s, w, h )
+
+            draw.RoundedBox(4, 0, 0, w, h,
+                ( backgroundColor or Color(255, 255, 255, 161) )
+            )
+
+        end
+        ImageCheckBox:SetText("")
+
+        local function CheckBoxChange()
+
+            local currentValue = GetConVar( conVarId ):GetInt()
+            if currentValue > 0 then currentValue = 0 else currentValue = 1 end
+
+            CheckBox:SetValue( currentValue )
+            CheckBox:SetChecked( currentValue > 0 )
+
+        end
+
+        ImageCheckBox.OnReleased = CheckBoxChange
+
+        local DLabel = RulePanel:Add( "DLabel" ) -- Create text
+        DLabel:SetText( text ) -- Set the text
+        DLabel:Dock( FILL ) -- Dock it
+        DLabel:DockMargin( 5, 0, 0, 0 ) -- Move the text to the right a little
+        DLabel:SetTextColor( textColor or Color( 255, 255, 255) ) -- Set text color to black
+        DLabel:SetMouseInputEnabled( true ) -- We must accept mouse input
+
+        DLabel.DoClick = function()
+
+            ImageCheckBox:SetChecked( not ImageCheckBox:GetChecked() )
+            CheckBoxChange()
+
+        end
+
+        return RulePanel
+
+    end
+
     -- Hover ring ball
-    local CheckboxHoverRingBallFin = vgui.Create( "DCheckBoxLabel", DermaPanel )
-    CheckboxHoverRingBallFin:SetConVar( "finos_cl_enableHoverRingBall_fin" )
-    CheckboxHoverRingBallFin:SetText( "Hover Ring Ball → FIN" )
-    CheckboxHoverRingBallFin:SetPos( 10, 30 )
-    CheckboxHoverRingBallFin:SizeToContents()
-    
-    local CheckboxHoverRingBallFlap = vgui.Create( "DCheckBoxLabel", DermaPanel )
-    CheckboxHoverRingBallFlap:SetConVar( "finos_cl_enableHoverRingBall_flap" )
-    CheckboxHoverRingBallFlap:SetText( "Hover Ring Ball → FLAP" )
-    CheckboxHoverRingBallFlap:SetPos( 10, 30 + 20 )
-    CheckboxHoverRingBallFlap:SizeToContents()
+    local CheckboxHoverRingBallFin = addItemBooleanClientSide( "View Hover Ring Ball → FIN", "finos_cl_enableHoverRingBall_fin", 10 )
+    CheckboxHoverRingBallFin:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    CheckboxHoverRingBallFin:SetPos( 10, 30 + 23 * 0 )
+
+    local CheckboxHoverRingBallFlap = addItemBooleanClientSide( "View Hover Ring Ball → FLAP", "finos_cl_enableHoverRingBall_flap", 10 )
+    CheckboxHoverRingBallFlap:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    CheckboxHoverRingBallFlap:SetPos( 10, 30 + 23 * 1 )
+
+    -- Angle Helpers
+    local CheckboxAlignAngleHelpers = addItemBooleanClientSide( "View Correct Start Angle Helpers", "finos_cl_enableAlignAngleHelpers", 10 )
+    CheckboxAlignAngleHelpers:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    CheckboxAlignAngleHelpers:SetPos( 10, 30 + 23 * 2 )
+
+    -- Forward Direction
+    local CheckboxAlignAngleHelpers = addItemBooleanClientSide( "View Forward Direction when looking at a fin ( START → STAR )", "finos_cl_enableForwardDirectionArrow", 10 )
+    CheckboxAlignAngleHelpers:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    CheckboxAlignAngleHelpers:SetPos( 10, 30 + 23 * 3 )
+
+    local GridSizeSliderBox = vgui.Create( "DPanel", DermaPanel )
+    GridSizeSliderBox:SetPos( 10, 30 + 23 * 4.2 )
+    GridSizeSliderBox:SetSize( settingsPanelWidthLeftSide - 20, ( settingsPanelheight - ( ( 30 + 23 * 4.2 ) + 10 - 2 ) ) )
+
+    GridSizeSliderBox.Paint = function( s, w, h )
+        draw.RoundedBox(8, 0, 0, w, h,
+            Color(255, 255, 255, 203)
+        )
+    end
+
+    local GridSizeSliderContainer = vgui.Create( "DForm", GridSizeSliderBox )
+    GridSizeSliderContainer:SetName( "Grid Size ( used for Forward Direction [DRAG/WIND] )" )
+    GridSizeSliderContainer:SetSize( GridSizeSliderBox:GetWide() - 10 - 2, GridSizeSliderBox:GetTall() )
+    GridSizeSliderContainer:SetPos( 6, 6 )
+    GridSizeSliderContainer:NumSlider( "X Cord. (def.: 9)", "finos_cl_gridSizeX", 1, 90 )
+    GridSizeSliderContainer:NumSlider( "Y Cord. (def.: 9)", "finos_cl_gridSizeY", 1, 90 )
+
+    GridSizeSliderContainer.Paint = function( s, w, h )
+        draw.RoundedBox(8, 0, 0, w, h,
+            Color(255, 255, 255, 0)
+        )
+        draw.RoundedBox(2, 0, 0, w, 20,
+            Color( 27, 11, 247, 100)
+        )
+    end
+
+    -- ** WIND Settings ** --
+    local WindSettingsPanel = vgui.Create( "DPanel", DermaPanel )
+    WindSettingsPanel:SetPos( settingsPanelWidthLeftSide, 30 )
+    WindSettingsPanel:SetSize( settingsPanelWidthRightSide, settingsPanelheight - 39 )
+
+    WindSettingsPanel.Paint = function( s, w, h )
+        draw.RoundedBox(8, 0, 0, w, h,
+            Color(255, 255, 255, 203)
+        )
+    end
+
+    local WindSettingTitle = vgui.Create( "DLabel", WindSettingsPanel )
+    WindSettingTitle:SetText( "Adjust Wind Settings and Apply ( applies auto. on creation ): →" )
+    WindSettingTitle:SetTextColor( Color( 53, 53, 53) )
+    WindSettingTitle:SetPos( 10, 5 )
+    WindSettingTitle:SizeToContents()
+
+    local WindSettingApplySettingsButton = vgui.Create( "DButton", WindSettingsPanel )
+    WindSettingApplySettingsButton:SetText( "Apply to eye target" )
+    WindSettingApplySettingsButton:SizeToContents()
+    WindSettingApplySettingsButton:SetSize( WindSettingApplySettingsButton:GetWide() + 20, WindSettingApplySettingsButton:GetTall() + 20 )
+    WindSettingApplySettingsButton:SetPos( settingsPanelWidthRightSide - 107 - 20, 5 )
+    function WindSettingApplySettingsButton:DoClick()
+
+        -- Apply settings
+        local target = LocalPlayer():GetEyeTrace()
+        local Entity = target.Entity
+
+        net.Start( "FINOS_UpdateWindSettings_SERVER" )
+            net.WriteEntity( Entity )
+        net.SendToServer()
+
+    end
+
+    WindSettingApplySettingsButton.Paint = function( s, w, h )
+        draw.RoundedBox(8, 0, 0, w, h,
+            Color(27, 11, 247, 220)
+        )
+        local border = 3
+        draw.RoundedBox(8, border, border, w - border * 2, h - border * 2,
+            Color(7, 248, 99)
+        )
+    end
+
+    local textColor = Color( 53, 53, 53)
+    local backgroundColor = Color( 53, 53, 53, 60)
+
+    local WindSettingCheckBox_EnableWind = addItemBooleanClientSide( "Enable Wind", "finos_cl_wind_EnableWind", 10, WindSettingsPanel, textColor, backgroundColor )
+    WindSettingCheckBox_EnableWind:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    WindSettingCheckBox_EnableWind:SetPos( 10, 27 + 23 * 0 )
+
+    local WindSettingCheckBox_ActivateWildWind = addItemBooleanClientSide( "Activate Wild Wind", "finos_cl_wind_ActivateWildWind", 10, WindSettingsPanel, textColor, backgroundColor )
+    WindSettingCheckBox_ActivateWildWind:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    WindSettingCheckBox_ActivateWildWind:SetPos( 10, 27 + 23 * 1 )
+
+    local WindSettingCheckBox_ActivateWildWind = addItemBooleanClientSide( "Activate Thermal Wind", "finos_cl_wind_ActivateThermalWind", 10, WindSettingsPanel, textColor, backgroundColor )
+    WindSettingCheckBox_ActivateWildWind:SetSize( settingsPanelWidthLeftSide - 20, 20 )
+    WindSettingCheckBox_ActivateWildWind:SetPos( 10, 27 + 23 * 2 )
+
+    local WindSettingSliderContainer = vgui.Create( "DForm", WindSettingsPanel )
+    WindSettingSliderContainer:SetName( "Adjust Wind Force ( WIREMOD wil overwrite ) and Scalars:" )
+    WindSettingSliderContainer:SetSize( settingsPanelWidthRightSide - 20, WindSettingsPanel:GetTall() - ( ( 30 + 20 * 3.4 ) + 10 ) )
+    WindSettingSliderContainer:SetPos( 10, 30 + 20 * 3.4 )
+
+    -- Sliders
+    WindSettingSliderContainer:NumSlider( "Wind Force per. m² (def.: 300)", "finos_cl_wind_ForcePerSquareMeterArea", -300000, 300000 )
+
+    WindSettingSliderContainer:NumSlider( "Wind[Min.] (def.: 0.4)", "finos_cl_wind_MinWindScale", 0, 1 )
+    WindSettingSliderContainer:NumSlider( "Wind[Max.] (def.: 0.8)", "finos_cl_wind_MaxWindScale", 0, 1 )
+
+    WindSettingSliderContainer:NumSlider( "Wild Wind[Min.] (def.: 1)", "finos_cl_wind_MinWildWindScale", 1, 6 )
+    WindSettingSliderContainer:NumSlider( "Wild Wind[Max.] (def.: 1.13)", "finos_cl_wind_MaxWildWindScale", 1, 6 )
+
+    WindSettingSliderContainer:NumSlider( "Thermal Lift Wind[Max.] (def.: 36)", "finos_cl_wind_MaxThermalLiftWindScale", 1, 200 )
+
+    WindSettingSliderContainer.Paint = function( s, w, h )
+        draw.RoundedBox(8, 0, 0, w, h,
+            Color(255, 255, 255, 0)
+        )
+        draw.RoundedBox(2, 0, 0, w, 20,
+            Color( 27, 11, 247, 100)
+        )
+    end
 
 end
 

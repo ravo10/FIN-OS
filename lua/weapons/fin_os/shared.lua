@@ -97,6 +97,10 @@ function SWEP:SetupDataTables()
 
 end
 
+-- For after when the first area point is set
+FINOS_DevationDecimalsAnglesAlign = 2
+FINOS_AllowedDevationAnglesAlign = 0.05
+
 -- Functions only important for SWEP tool
 function SWEP:DoShootEffect( hitpos, hitnormal, entity, physbone, bFirstTimePredicted )
 
@@ -312,6 +316,96 @@ function FINOS_GetDataToEntFinTable( ent, entTableID, ID )
         return {}
 
     end
+
+end
+
+if SERVER then
+
+    net.Receive( "FINOS_UpdateWindSettings_SERVER", function( len, pl )
+
+        local Entity = net.ReadEntity()
+
+        if Entity:IsWorld() then
+
+            FINOS_AlertPlayer( "**[WIND] Aim on an Entity to update Wind Settings", pl )
+            FINOS_SendNotification( "[WIND] Aim on an Entity to update Wind Settings", FIN_OS_NOTIFY_ERROR, pl, 3 )
+
+            return nil
+
+        elseif not Entity:GetNWBool( "fin_os_active" ) then
+
+            FINOS_AlertPlayer( "**[WIND] This Entity is not an active FIN OS fin!", pl )
+            FINOS_SendNotification( "[WIND] This Entity is not an active FIN OS fin!", FIN_OS_NOTIFY_ERROR, pl, 3 )
+
+            return nil
+
+        end
+
+        if Entity:GetNWBool( "fin_os_active" ) and Entity:GetNWEntity( "fin_os_currentOwner" ) ~= pl then --[[ Only allow the owner of fin to adjust wind! ]]
+
+            FINOS_AlertPlayer( "**[WIND] You are not the owner of this fin!", pl )
+            FINOS_SendNotification( "[WIND] You are not the owner of this fin!", FIN_OS_NOTIFY_ERROR, pl, 3 )
+
+            pl:EmitSound( "fin_os/error.wav", 41, 100 )
+
+            return nil
+
+        end
+
+        local EnableWind                = GetConVar( "finos_cl_wind_EnableWind" ):GetInt()
+        local ForcePerSquareMeterArea   = GetConVar( "finos_cl_wind_ForcePerSquareMeterArea" ):GetFloat()
+        local MinWindScale              = GetConVar( "finos_cl_wind_MinWindScale" ):GetFloat()
+        local MaxWindScale              = GetConVar( "finos_cl_wind_MaxWindScale" ):GetFloat()
+
+        local ActivateWildWind          = GetConVar( "finos_cl_wind_ActivateWildWind" ):GetInt()
+        local MinWildWindScale          = GetConVar( "finos_cl_wind_MinWildWindScale" ):GetFloat()
+        local MaxWildWindScale          = GetConVar( "finos_cl_wind_MaxWildWindScale" ):GetFloat()
+
+        local ActivateThermalWind       = GetConVar( "finos_cl_wind_ActivateThermalWind" ):GetInt()
+        local MaxThermalLiftWindScale   = GetConVar( "finos_cl_wind_MaxThermalLiftWindScale" ):GetFloat()
+
+        -- Check/Adjust to allowed settings ( from SERVER )
+        local MaxForcePerSquareMeterAreaAllowed     = GetConVar( "finos_wind_MaxForcePerSquareMeterAreaAllowed" ):GetInt()
+        local MinWindScaleAllowed                   = GetConVar( "finos_wind_MinWindScaleAllowed" ):GetInt()
+        local MaxWindScaleAllowed                   = GetConVar( "finos_wind_MaxWindScaleAllowed" ):GetInt()
+        local MinWildWindScaleAllowed               = GetConVar( "finos_wind_MinWildWindScaleAllowed" ):GetInt()
+        local MaxWildWindScaleAllowed               = GetConVar( "finos_wind_MaxWildWindScaleAllowed" ):GetInt()
+        local MaxActivateThermalWindScaleAllowed    = GetConVar( "finos_wind_MaxActivateThermalWindScaleAllowed" ):GetInt()
+
+        -- Prevent Player setting invalid settings ( let server decide the min/max amount )
+        if ForcePerSquareMeterArea > MaxForcePerSquareMeterAreaAllowed then ForcePerSquareMeterArea = MaxForcePerSquareMeterAreaAllowed end
+
+        if MinWindScale > MinWindScaleAllowed then MinWindScale = MinWindScaleAllowed end
+        if MaxWindScale > MaxWindScaleAllowed then MaxWindScale = MaxWindScaleAllowed end
+
+        if MinWildWindScale > MinWildWindScaleAllowed then MinWildWindScale = MinWildWindScaleAllowed end
+        if MaxWildWindScale > MaxWildWindScaleAllowed then MaxWildWindScale = MaxWildWindScaleAllowed end
+
+        if MaxThermalLiftWindScale > MaxActivateThermalWindScaleAllowed then MaxThermalLiftWindScale = MaxActivateThermalWindScaleAllowed end
+
+        -- Apply to Entity ( store )
+        FINOS_AddDataToEntFinTable( Entity, "fin_os__EntWindProperties", {
+
+            EnableWind = EnableWind,
+            ForcePerSquareMeterArea = ForcePerSquareMeterArea,
+            MinWindScale = MinWindScale,
+            MaxWindScale = MaxWindScale,
+
+            ActivateWildWind = ActivateWildWind,
+            MinWildWindScale = MinWildWindScale,
+            MaxWildWindScale = MaxWildWindScale,
+
+            ActivateThermalWind = ActivateThermalWind,
+            MaxThermalLiftWindScale = MaxThermalLiftWindScale
+
+        }, nil, "ID1_Wind", true )
+
+        FINOS_AlertPlayer( "**[WIND] Applied NEW Wind settings for fin!", pl )
+        FINOS_SendNotification( "[WIND] Applied NEW Wind settings for fin!", FIN_OS_NOTIFY_GENERIC, pl, 4 )
+
+        pl:EmitSound( "garrysmod/save_load3.wav", 70, 110 )
+
+    end )
 
 end
 

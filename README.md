@@ -36,6 +36,28 @@
 
 * ```finos_cl_enableHoverRingBall_fin ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the markers for a fin.
 * ```finos_cl_enableHoverRingBall_flap ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the markers for a flap.
+* ```finos_cl_enableAlignAngleHelpers ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the "Correct Start Angle Helpers".
+* ```finos_cl_enableForwardDirectionArrow ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the Forward Direction "Arrow".
+
+* ```finos_cl_gridSizeX ( def. = 9 ) [ FCVAR_ARCHIVE ]``` - Clientside. Adjusts the size of the grid in X position.
+* ```finos_cl_gridSizeY ( def. = 9 ) [ FCVAR_ARCHIVE ]``` - Clientside. Adjusts the size of the grid in Y position.
+
+**WIND Settings**
+* ```finos_wind_MaxForcePerSquareMeterAreaAllowed ( def. = def.: 1000 => ( -1000 - 1000 ) ) [ FCVAR_PROTECTED ]``` - Max. Allowed Wind Force Per. Square Meter of Area
+* ```finos_wind_MinMinWindScaleAllowed ( def. = def.: 1 ) [ FCVAR_PROTECTED ]``` - Min. Allowed Wild Wind Scale
+* ```finos_wind_MaxWindScaleAllowed ( def. = def.: 6 ) [ FCVAR_PROTECTED ]``` - Max. Allowed Wild Wind Scale
+* ```finos_wind_MaxActivateThermalWindAllowed ( def. = def.: 200 ) [ FCVAR_PROTECTED ]``` - Max. Allowed Thermal Lift Wind Scale
+
+*Client*
+* ```finos_cl_wind_EnableWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Wind.
+* ```finos_cl_wind_ForcePerSquareMeterArea ( def. 300 => ( -300 - 300 ) )[ -300000 - 300000 ] [ FCVAR_ARCHIVE ]``` - Clientside. Wind Force Per. Square Meter of Area.
+* ```finos_cl_wind_MinWindScale ( def. = 0.4 )[ def.: 0 - 1 ( unit vector ) ] [ FCVAR_ARCHIVE ]``` - Clientside. Min. Wind Scale.
+* ```finos_cl_wind_MaxWindScale ( def. = 0.8 )[ def.: 0 - 1 ( unit vector ) ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Wind Scale.
+* ```finos_cl_wind_ActivateWildWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Wild Wind.
+* ```finos_cl_wind_MinWildWindScale ( def. = 1 )[ def.: 1 - 6 ] [ FCVAR_ARCHIVE ]``` - Clientside. Min. Wild Wind Scale.
+* ```finos_cl_wind_MaxWildWindScale ( def. = 1.13 )[ def.: 1 - 6 ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Wild Wind Scale.
+* ```finos_cl_wind_ActivateThermalWind ( def. = 0 )[ 0 or 1 ] [ FCVAR_ARCHIVE ]``` - Clientside. Activate Thermal Lift Wind.
+* ```finos_cl_wind_MaxThermalLiftWindScale ( def. = 36 )[ >1 - def.: 200 ] [ FCVAR_ARCHIVE ]``` - Clientside. Max. Thermal Lift Wind Scale.
 
 ## @todo
 - Make a custom world model for the fin tool SWEP
