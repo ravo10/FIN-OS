@@ -8,18 +8,19 @@ if WireToolSetup then
         language.Add( "tool.wire_finos_fin.name", "FIN OS Tool - Fin Controller (Wire)" )
         language.Add( "tool.wire_finos_fin.desc", "Spawns a Fin Controller for use with the wire system." )
 
-        language.Add( "Tool.wire_finos_fin.out_AAP",    "Output Attack Angle"       )
-        language.Add( "Tool.wire_finos_fin.out_AM",     "Output Area (meters)"      )
-        language.Add( "Tool.wire_finos_fin.out_AI",     "Output Area (inches)"      )
-        language.Add( "Tool.wire_finos_fin.out_LFN",    "Output Lift Force"         )
-        language.Add( "Tool.wire_finos_fin.out_DFN",    "Output Drag Force"         )
-        language.Add( "Tool.wire_finos_fin.out_WE",     "Output Wind Enabled"       )
-        language.Add( "Tool.wire_finos_fin.out_WFA",    "Output Wind Force Applied" )
-        language.Add( "Tool.wire_finos_fin.out_SCALAR", "Output Scalar"             )
-        language.Add( "Tool.wire_finos_fin.out_SKMH",   "Output Speed (kph)"        )
-        language.Add( "Tool.wire_finos_fin.out_SMPH",   "Output Speed (mph)"        )
-        language.Add( "Tool.wire_finos_fin.out_MPS",    "Output Speed (mps)"        )
-        language.Add( "Tool.wire_finos_fin.out_BT",     "Output if Being Tracked"   )
+        language.Add( "Tool.wire_finos_fin.out_AAP",    "Output Angle of Attack (PITCH)"    )
+        language.Add( "Tool.wire_finos_fin.out_AM",     "Output Area [METERS]"              )
+        language.Add( "Tool.wire_finos_fin.out_AI",     "Output Area [INCHES]"              )
+        language.Add( "Tool.wire_finos_fin.out_LFN",    "Output Lift Force"                 )
+        language.Add( "Tool.wire_finos_fin.out_DFN",    "Output Drag Force"                 )
+        language.Add( "Tool.wire_finos_fin.out_WE",     "Output Wind Enabled"               )
+        language.Add( "Tool.wire_finos_fin.out_WFA",    "Output Wind Force Applied"         )
+        language.Add( "Tool.wire_finos_fin.out_SCALAR", "Output Scalar"                     )
+        language.Add( "Tool.wire_finos_fin.out_KNOTS",  "Output Speed [KNOTS]"              )
+        language.Add( "Tool.wire_finos_fin.out_SKMH",   "Output Speed [KPH]"                )
+        language.Add( "Tool.wire_finos_fin.out_SMPH",   "Output Speed [MPH]"                )
+        language.Add( "Tool.wire_finos_fin.out_MPS",    "Output Speed [MPS]"                )
+        language.Add( "Tool.wire_finos_fin.out_BT",     "Output if Being Tracked"           )
 
         TOOL.Information = { { name = "left", text = "Create/Update " .. TOOL.Name } }
 
@@ -40,6 +41,7 @@ if WireToolSetup then
                 self:GetClientNumber( "out_WE"      ) ~= 0,
                 self:GetClientNumber( "out_WFA"     ) ~= 0,
                 self:GetClientNumber( "out_SCALAR"  ) ~= 0,
+                self:GetClientNumber( "out_KNOTS"   ) ~= 0,
                 self:GetClientNumber( "out_SKMH"    ) ~= 0,
                 self:GetClientNumber( "out_SMPH"    ) ~= 0,
                 self:GetClientNumber( "out_MPS"     ) ~= 0,
@@ -58,11 +60,12 @@ if WireToolSetup then
         out_WFA     = 1,
         out_SCALAR  = 1,
         out_AM      = 1,
-        out_AI      = 0,
+        out_AI      = 1,
+        out_KNOTS   = 1,
         out_SKMH    = 1,
-        out_SMPH    = 0,
-        out_MPS     = 0,
-        out_BT      = 0
+        out_SMPH    = 1,
+        out_MPS     = 1,
+        out_BT      = 1
     }
     cleanup.Register( "wire_finos_fin" )
 
@@ -79,6 +82,7 @@ if WireToolSetup then
         panel:CheckBox( "#Tool.wire_finos_fin.out_WE",      "wire_finos_fin_out_WE"     )
         panel:CheckBox( "#Tool.wire_finos_fin.out_WFA",     "wire_finos_fin_out_WFA"    )
         panel:CheckBox( "#Tool.wire_finos_fin.out_SCALAR",  "wire_finos_fin_out_SCALAR" )
+        panel:CheckBox( "#Tool.wire_finos_fin.out_KNOTS",    "wire_finos_fin_out_KNOTS"   )
         panel:CheckBox( "#Tool.wire_finos_fin.out_SKMH",    "wire_finos_fin_out_SKMH"   )
         panel:CheckBox( "#Tool.wire_finos_fin.out_SMPH",    "wire_finos_fin_out_SMPH"   )
         panel:CheckBox( "#Tool.wire_finos_fin.out_MPS",     "wire_finos_fin_out_MPS"    )

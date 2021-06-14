@@ -5,7 +5,11 @@
 
 ### You can find the stand alone tool under: **Weapons => Tools => Fin OS Tool**
 
-**Made from scratch, and based on the modern lift equation: https://wright.nasa.gov/airplane/lifteq.html**
+**Made from scratch, and based on the modern lift/drag equations: https://wright.nasa.gov/airplane/lifteq.html & ( https://www.grc.nasa.gov/www/k-12/airplane/sized.html, https://www.grc.nasa.gov/www/k-12/airplane/dragco.html, https://www.grc.nasa.gov/www/k-12/airplane/drageq.html, https://www.grc.nasa.gov/www/k-12/airplane/presar.html )**
+
+
+### Quick start:
+**Left-Click** to add two vector points for the forward direction vector. (this should normally be in the direction the creations forward reference is) After that, create the area of the fin. Done. You can also add a flap if you want with **( IN_USE + Left-Click )** on a fin and prop. Reload will remove fin and flap, or flap. **Right-Click** will track selected fin (real-time physics). **( IN_USE + Sroll Wheel )** will increase/decrease the scalar value of the fin you are looking at. The server admin can adjust server settings with the console variables underneath.
 
 ### How to use:
 * You can find the stand alone tool under: ***Weapons => Tools => Fin OS Tool***
@@ -17,7 +21,7 @@
 * **( IN_USE + MIDDLE_MOUSE ) to open** the client settings panel
 
 ### How it works:
-* It uses **real physics** to calculate lift from the center of the prop, and real life formula for calculating lift: *Force[LIFT] = .5 * rho[AIR] * Velocity[m/s]^2 * Area[m^2] * C[L - angle of attack]*
+* It uses **real physics** to calculate lift from the center of the prop, and real life formula for calculating lift: *Force[LIFT] = .5 * rho[AIR] * Velocity[m/s]^2 * Area[m^2] * C[L - angle of attack]* - also about uses the same logic for the drag
 
 ### Features:
 * Supports duplication
@@ -28,12 +32,14 @@
 * Supports Wiremod input/output ( *Physics => FIN OS Tool* )
 
 ### Console Variables
+*Server*
 * ```finos_maxfin_os_ent ( def. = 20 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Amount of Fin OS fin's possible for each Player to spawn ( only for multiplayer ).
 * ```finos_rhodensistyfluidvalue ( def. = 1.29 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Mass density ( rho ) that will be applied to Fin OS fin.
 * ```finos_maxscalarvalue ( def. = 69 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Maximum scalar value a player can apply to a Fin OS fin.
 * ```finos_disablestrictmode ( def. = 0 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Disables checking for angle of prop and crossing vector lines, if you just want to be joking around ( other servers might not accept the duplicate tho ).
 * ```finos_disableprintchatmessages ( def. = 1 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Disables printing messages in chat ( only legacy ).
 
+*Client*
 * ```finos_cl_enableHoverRingBall_fin ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the markers for a fin.
 * ```finos_cl_enableHoverRingBall_flap ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the markers for a flap.
 * ```finos_cl_enableAlignAngleHelpers ( def. = 1 ) [ FCVAR_ARCHIVE ]``` - Clientside. Activate or deactivate the "Correct Start Angle Helpers".
@@ -47,6 +53,9 @@
 * ```finos_cl_gridColorB ( def. = 241 ) [ FCVAR_ARCHIVE ]``` - Clientside. Change the Blue channel for the grid color.
 
 **WIND Settings:**
+*Server*
+* ```finos_wind_disableAllServerLimits ( def. = 0 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Disables all wind limits set by server.
+
 * ```finos_wind_maxForcePerSquareMeterAreaAllowed ( def. = 6000 => ( -6000 - 6000 ) ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Max. Allowed Wind Force Per. Square Meter of Area.
 * ```finos_wind_minWindScaleAllowed ( def. = 0.1 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Min. Allowed Wild Wind Scale.
 * ```finos_wind_maxWindScaleAllowed ( def. = 6 ) [ FCVAR_PROTECTED, FCVAR_ARCHIVE ]``` - Max. Allowed Wild Wind Scale.

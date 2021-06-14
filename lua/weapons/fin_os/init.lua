@@ -27,6 +27,7 @@ AddCSLuaFile( "reload.lua" )
 -- ///////////////////////////////////////////////////////////////////////////////
 
 -- CONSOLE VARIABLES
+-- Server
 CreateConVar(
 
     "finos_maxfin_os_ent", 20,
@@ -63,6 +64,7 @@ CreateConVar(
 
 )
 
+-- Client
 CreateClientConVar( "finos_cl_enableHoverRingBall_fin", "1", true, false )
 CreateClientConVar( "finos_cl_enableHoverRingBall_flap", "1", true, false )
 CreateClientConVar( "finos_cl_enableAlignAngleHelpers", "1", true, false )
@@ -76,6 +78,9 @@ CreateClientConVar( "finos_cl_gridColorG", "146", true, false ) --[[ INT ]]
 CreateClientConVar( "finos_cl_gridColorB", "241", true, false ) --[[ INT ]]
 
 -- WIND
+-- Server
+CreateConVar( "finos_wind_disableAllServerLimits", 0, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Disables all wind limits set by server." )
+
 CreateConVar( "finos_wind_maxForcePerSquareMeterAreaAllowed", 6000, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Max Force Per. Square Meter For Area Allowed." )
 CreateConVar( "finos_wind_minWindScaleAllowed", 0, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Min. Wind Scale Allowed." )
 CreateConVar( "finos_wind_maxWindScaleAllowed", 1, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Max. Wind Scale Allowed." )
@@ -83,6 +88,7 @@ CreateConVar( "finos_wind_minWildWindScaleAllowed", 0.1, bit.bor( FCVAR_PROTECTE
 CreateConVar( "finos_wind_maxWildWindScaleAllowed", 6, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Max. Wild Wind Scale Allowed." )
 CreateConVar( "finos_wind_maxActivateThermalWindScaleAllowed", 200, bit.bor( FCVAR_PROTECTED, FCVAR_ARCHIVE ), "Max. Thermal Lift Wind Scale Allowed." )
 
+-- Client
 CreateClientConVar( "finos_cl_wind_enableWind", "0", true, false )
 CreateClientConVar( "finos_cl_wind_forcePerSquareMeterArea", "300", true, false ) --[[ FLOAT ]]
 CreateClientConVar( "finos_cl_wind_minWindScale", "0.4", true, false ) --[[ FLOAT ]]

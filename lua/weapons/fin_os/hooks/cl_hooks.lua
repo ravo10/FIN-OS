@@ -143,7 +143,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 draw.DrawText(
 
-                    "Air Attack Angle: " .. pitchAttackAngle .. "˚ | " .. pitchAttackAngle_FLAP .. "˚",
+                    "Angle of Attack: " .. pitchAttackAngle .. "˚ | " .. pitchAttackAngle_FLAP .. "˚",
                     textType,
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 ),
@@ -413,7 +413,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 draw.DrawText(
 
-                    "Air Attack Angle: " .. pitchAttackAngle.. "˚ (important)",
+                    "Angle of Attack: " .. pitchAttackAngle.. "˚ (important)",
                     "HudSelectionText",
                     ( backgroundPosX + 20 ),
                     ( backgroundPosY + 20 ),
@@ -556,7 +556,7 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
             draw.DrawText(
 
-                "AAA: " .. pitchAttackAngle.. "˚ | " .. pitchAttackAngle_FLAP .. "˚",
+                "AOA: " .. pitchAttackAngle.. "˚ | " .. pitchAttackAngle_FLAP .. "˚",
                 "DermaDefaultBold",
                 ( backgroundPosX + 10 ),
                 ( backgroundPosY + 8 ),

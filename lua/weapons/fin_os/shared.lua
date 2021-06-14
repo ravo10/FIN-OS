@@ -381,21 +381,27 @@ if SERVER then
 
         local function r( id, value, limitValue, compare )
 
-            FINOS_AlertPlayer( "**[WIND] The " .. string.upper( id ) .. " SETTING was overwritten to: " .. math.Round( limitValue, 2 ) .. "! Because: " .. math.Round( value, 2 ) .. " " .. compare .. " " .. math.Round( limitValue, 2 ) .. ". Can be adjusted by admin.", pl )
-            FINOS_SendNotification( "[WIND] The " .. string.upper( id ) .. " SETTING was overwritten to: " .. math.Round( limitValue, 2 ) .. "! Because: " .. math.Round( value, 2 ) .. " " .. compare .. " " .. math.Round( limitValue, 2 ) .. ". Can be adjusted by admin", FIN_OS_NOTIFY_ERROR, pl, 6 )
+            FINOS_AlertPlayer( "**[WIND] The " .. string.upper( id ) .. " SETTING was overwritten to: " .. math.Round( limitValue, 2 ) .. "! Because: " .. math.Round( value, 2 ) .. " " .. compare .. " " .. math.Round( limitValue, 2 ) .. ". Can be adjusted/disabled by admin.", pl )
+            FINOS_SendNotification( "[WIND] The " .. string.upper( id ) .. " SETTING was overwritten to: " .. math.Round( limitValue, 2 ) .. "! Because: " .. math.Round( value, 2 ) .. " " .. compare .. " " .. math.Round( limitValue, 2 ) .. ". Can be adjusted/disabled by admin", FIN_OS_NOTIFY_ERROR, pl, 6 )
+
+            if pl and ( pl:IsAdmin() or pl:IsSuperAdmin() ) then FINOS_SendNotification( "You can disable all wind limits with ConVar: finos_wind_disableAllServerLimits", FIN_OS_NOTIFY_HINT, pl, 7.5 ) end
 
         end
 
-        -- Prevent Player setting invalid settings ( let server decide the min/max amount )
-        if math.abs( ForcePerSquareMeterArea ) > math.abs( MaxForcePerSquareMeterAreaAllowed ) then r( "Wind Force [Max]", ForcePerSquareMeterArea, MaxForcePerSquareMeterAreaAllowed, ">" ) ForcePerSquareMeterArea = MaxForcePerSquareMeterAreaAllowed end
+        if GetConVar( "finos_wind_disableAllServerLimits" ):GetInt() == 0 then
 
-        if math.abs( MinWindScale ) < math.abs( MinWindScaleAllowed ) then r( "Wind [Min]", MinWindScale, MinWindScaleAllowed, "<" ) MinWindScale = MinWindScaleAllowed end
-        if math.abs( MaxWindScale ) > math.abs( MaxWindScaleAllowed ) then r( "Wind [Max]", MaxWindScale, MaxWindScaleAllowed, ">" ) MaxWindScale = MaxWindScaleAllowed end
+            -- Prevent Player setting invalid settings ( let server decide the min/max amount )
+            if math.abs( ForcePerSquareMeterArea ) > math.abs( MaxForcePerSquareMeterAreaAllowed ) then r( "Wind Force [Max]", ForcePerSquareMeterArea, MaxForcePerSquareMeterAreaAllowed, ">" ) ForcePerSquareMeterArea = MaxForcePerSquareMeterAreaAllowed end
 
-        if math.abs( MinWildWindScale ) < math.abs( MinWildWindScaleAllowed ) then r( "Wild [Min]", MinWildWindScale, MinWildWindScaleAllowed, "<" ) MinWildWindScale = MinWildWindScaleAllowed end
-        if math.abs( MaxWildWindScale ) > math.abs( MaxWildWindScaleAllowed ) then r( "Wild [Max]", MaxWildWindScale, MaxWildWindScaleAllowed, ">" ) MaxWildWindScale = MaxWildWindScaleAllowed end
+            if math.abs( MinWindScale ) < math.abs( MinWindScaleAllowed ) then r( "Wind [Min]", MinWindScale, MinWindScaleAllowed, "<" ) MinWindScale = MinWindScaleAllowed end
+            if math.abs( MaxWindScale ) > math.abs( MaxWindScaleAllowed ) then r( "Wind [Max]", MaxWindScale, MaxWindScaleAllowed, ">" ) MaxWindScale = MaxWindScaleAllowed end
 
-        if math.abs( MaxThermalLiftWindScale ) > math.abs( MaxActivateThermalWindScaleAllowed ) then r( "Thermal [Max]", MaxThermalLiftWindScale, MaxActivateThermalWindScaleAllowed, ">" ) MaxThermalLiftWindScale = MaxActivateThermalWindScaleAllowed end
+            if math.abs( MinWildWindScale ) < math.abs( MinWildWindScaleAllowed ) then r( "Wild [Min]", MinWildWindScale, MinWildWindScaleAllowed, "<" ) MinWildWindScale = MinWildWindScaleAllowed end
+            if math.abs( MaxWildWindScale ) > math.abs( MaxWildWindScaleAllowed ) then r( "Wild [Max]", MaxWildWindScale, MaxWildWindScaleAllowed, ">" ) MaxWildWindScale = MaxWildWindScaleAllowed end
+
+            if math.abs( MaxThermalLiftWindScale ) > math.abs( MaxActivateThermalWindScaleAllowed ) then r( "Thermal [Max]", MaxThermalLiftWindScale, MaxActivateThermalWindScaleAllowed, ">" ) MaxThermalLiftWindScale = MaxActivateThermalWindScaleAllowed end
+
+        end
 
         -- Apply to Entity ( store )
         FINOS_AddDataToEntFinTable( Entity, "fin_os__EntWindProperties", {
