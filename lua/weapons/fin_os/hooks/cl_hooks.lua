@@ -108,7 +108,9 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 local MaxWildWind = math.Round( FinWindPropertiesTable[ "MaxWildWindScale" ] or 0, 2 )
                 local MaxThermalLiftWind = math.Round( FinWindPropertiesTable[ "MaxThermalLiftWindScale" ] or 0, 2 )
 
-                local backgroundPosX = ( ScrW() - 300 - 20 )
+                local width = 300
+                local height = 217
+                local backgroundPosX = ( ScrW() - width - 20 )
                 local backgroundPosY = 250 + someExtra001
 
                 local textColor = Color( 255, 255, 255, 255 )
@@ -118,8 +120,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 draw.RoundedBox( 8,
                     backgroundPosX,
                     backgroundPosY,
-                    300,
-                    200,
+                    width,
+                    height,
                     Color( 78, 99, 105, 129 )
 
                 )
@@ -233,16 +235,46 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                 )
 
+                -- More Wind Information
+                local backgroundPosXWind = backgroundPosX + ( width - 215 )
+                local backgroundPosYWind = ( backgroundPosY + height + 3 )
+
+                draw.RoundedBox( 8,
+                    backgroundPosXWind,
+                    backgroundPosYWind,
+                    215,
+                    190,
+                    Color( 78, 99, 105, 129 )
+
+                )
+
+                if EntTruty( Player ) and EntTruty( Player:GetActiveWeapon() ) and Player:GetActiveWeapon():GetClass() ~= "fin_os" then
+
+                    draw.DrawText(
+
+                        "FIN OS",
+                        "Trebuchet24",
+                        ( backgroundPosXWind + 232 ),
+                        ( backgroundPosYWind - 13 ),
+                        Color( 247, 245, 162, 220 ),
+                        TEXT_ALIGN_LEFT
+
+                    )
+
+                end
+
+                local leftStartText = ( 20 )
+
                 local topStart = 20
                 local leftStart = 3
-                -- More Wind Information
+
                 draw.DrawText(
 
                     "WIND:",
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart ),
-                    ( backgroundPosY + topStart + 15 * 0 ),
-                    textColor2,
+                    ( backgroundPosXWind + leftStartText + leftStart ),
+                    ( backgroundPosYWind + topStart + 15 * 0 ),
+                    Color( 75, 235, 142),
                     TEXT_ALIGN_LEFT
 
                 )
@@ -251,8 +283,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     "Enabled: " .. WindEnabled,
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 ),
-                    ( backgroundPosY + topStart + 5 + 15 * 1 ),
+                    ( backgroundPosXWind + leftStartText + leftStart + 5 ),
+                    ( backgroundPosYWind + topStart + 5 + 15 * 1 ),
                     textColor2,
                     TEXT_ALIGN_LEFT
 
@@ -262,8 +294,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     "Wild: " .. WildWind,
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 ),
-                    ( backgroundPosY + topStart + 5 + 3 + 15 * 2 ),
+                    ( backgroundPosXWind + leftStartText + leftStart + 5 + 5 ),
+                    ( backgroundPosYWind + topStart + 5 + 3 + 15 * 2 ),
                     textColor2,
                     TEXT_ALIGN_LEFT
 
@@ -273,8 +305,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     "Thermal Lift: " .. ThermalWind,
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 ),
-                    ( backgroundPosY + topStart + 5 + 3 + 15 * 3 ),
+                    ( backgroundPosXWind + leftStartText + leftStart + 5 + 5 ),
+                    ( backgroundPosYWind + topStart + 5 + 3 + 15 * 3 ),
                     textColor2,
                     TEXT_ALIGN_LEFT
 
@@ -284,8 +316,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     "Min.: " .. CheckIfWindTypeIsValid( MinWind, WindEnabled ),
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
-                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 3 - 4 * 0 ),
+                    ( backgroundPosXWind + leftStartText + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosYWind + topStart + 5 + 3 + 17 + 15 * 3 - 4 * 0 ),
                     textColor2,
                     TEXT_ALIGN_LEFT
 
@@ -295,8 +327,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     "Max.: " .. CheckIfWindTypeIsValid( MaxWind, WindEnabled ),
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
-                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 4 - 4 * 1 ),
+                    ( backgroundPosXWind + leftStartText + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosYWind + topStart + 5 + 3 + 17 + 15 * 4 - 4 * 1 ),
                     textColor2,
                     TEXT_ALIGN_LEFT
 
@@ -306,8 +338,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     "Min. Wild: " .. CheckIfWindTypeIsValid( MinWildWind, WildWind ),
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
-                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 5 - 4 * 0 ),
+                    ( backgroundPosXWind + leftStartText + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosYWind + topStart + 5 + 3 + 17 + 15 * 5 - 4 * 0 ),
                     textColor2,
                     TEXT_ALIGN_LEFT
 
@@ -317,8 +349,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     "Max. Wild: " .. CheckIfWindTypeIsValid( MaxWildWind, WildWind ),
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
-                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 6 - 4 * 1 ),
+                    ( backgroundPosXWind + leftStartText + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosYWind + topStart + 5 + 3 + 17 + 15 * 6 - 4 * 1 ),
                     textColor2,
                     TEXT_ALIGN_LEFT
 
@@ -328,8 +360,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     "Max. Th. Lift: " .. CheckIfWindTypeIsValid( MaxThermalLiftWind, ThermalWind ),
                     textType,
-                    ( backgroundPosX + 300 / 2 + 20 + leftStart + 5 + 5 + 5 ),
-                    ( backgroundPosY + topStart + 5 + 3 + 17 + 15 * 7 - 4 * 0 ),
+                    ( backgroundPosXWind + leftStartText + leftStart + 5 + 5 + 5 ),
+                    ( backgroundPosYWind + topStart + 5 + 3 + 17 + 15 * 7 - 4 * 0 ),
                     textColor2,
                     TEXT_ALIGN_LEFT
 
@@ -347,7 +379,9 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
                 local pitchAttackAngle = math.Round( FinSettingsTable[ "AttackAngle_Pitch" ] )
                 local rollCosinusFraction = FinSettingsTable[ "AttackAngle_RollCosinus" ]
 
-                local backgroundPosX = ( ScrW() - 300 - 20 )
+                local width = 300
+                local height = 110
+                local backgroundPosX = ( ScrW() - width - 20 )
                 local backgroundPosY = 250 + someExtra001
 
                 local textColor = Color( 255, 255, 255, 255 )
@@ -356,8 +390,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
 
                     backgroundPosX,
                     backgroundPosY,
-                    300,
-                    110,
+                    width,
+                    height,
                     Color( 78, 99, 105, 129 )
 
                 )
@@ -490,7 +524,8 @@ hook.Add( "HUDPaint", "fin_os:fin_display_settings", function()
             local height = 106
 
             local backgroundPosX = ( ScrW() - width - 20 )
-            local backgroundPosY = ( 250 + 210 ) + someExtra001
+            if EntTruty( Entity ) and Entity:GetNWBool( "fin_os_active" ) then backgroundPosX = ( ScrW() - 300 - 85 - 3 ) end
+            local backgroundPosY = ( 250 + 217 + 3 ) + someExtra001
 
             local pitchAttackAngle = math.Round( PHYSICSPROPERTIESSTABLE[ "AttackAngle_Pitch_FIN" ] or 0 )
             local pitchAttackAngle_FLAP = math.Round( PHYSICSPROPERTIESSTABLE[ "AttackAngle_Pitch_FLAP" ] or 0 )

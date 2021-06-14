@@ -19,7 +19,7 @@ function SWEP:SecondaryAttack()
             
             FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", nil, OWNER )
 
-            FINOS_SendNotification( "Not tracking this Fin", FIN_OS_NOTIFY_GENERIC, OWNER, 2.5 )
+            FINOS_SendNotification( "NOT TRACKING this Fin", FIN_OS_NOTIFY_GENERIC, OWNER, 2.5 )
 
         else
 
@@ -27,7 +27,7 @@ function SWEP:SecondaryAttack()
 
             FINOS_AddDataToEntFinTable( OWNER, "fin_os__EntBeingTracked", nil, OWNER )
 
-            FINOS_SendNotification( "Tracking this Fin", FIN_OS_NOTIFY_GENERIC, OWNER, 2.5 )
+            FINOS_SendNotification( "TRACKING this Fin", FIN_OS_NOTIFY_GENERIC, OWNER, 2.5 )
 
         end
 
