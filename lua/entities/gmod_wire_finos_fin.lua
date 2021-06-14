@@ -13,7 +13,7 @@ if WireToolSetup then
     local WireInputsNames = {
 
         "Entity(FinOS FIN)",
-        "AttackAngle(PITCH)",
+        "AngleOfAttack(PITCH)",
         "WindForceBeingApplied(NEWTONS)",
         "Scalar(LIFT/DRAG)"
 
@@ -32,7 +32,7 @@ if WireToolSetup then
     local WireOutputsNames2 = {}
     local WireOutputsNames = {
 
-        "AttackAngle(PITCH)",
+        "AngleOfAttack(PITCH)",
         "Area1(meters[FLOAT])",
         "Area2(inches[FLOAT])",
         "LiftForce(NEWTONS)",
@@ -40,9 +40,10 @@ if WireToolSetup then
         "WindEnabled[BOOL]",
         "WindForceBeingApplied(NEWTONS)",
         "Scalar(LIFT/DRAG)",
-        "Speed1(KPH)",
-        "Speed2(MPH)",
-        "Speed3(MPS)",
+        "Speed1(KNOTS)",
+        "Speed2(KPH)",
+        "Speed3(MPH)",
+        "Speed4(MPS)",
         "BeingTracked(anyone[BOOL])"
 
     }
@@ -85,7 +86,7 @@ if WireToolSetup then
     local fallbackStr, fallbackInt = "n/a", ( 0 / 0 ) --[[ nan ]]
     local BaseTriOut = {
 
-        fallbackStr .. "˚",     fallbackInt,
+        "AOA: " .. fallbackStr .. "˚",     fallbackInt,
         fallbackStr .. " m²",   fallbackInt,
         fallbackStr .. " In²",  fallbackInt,
         fallbackStr .. " N",    fallbackInt,
@@ -93,9 +94,10 @@ if WireToolSetup then
         fallbackStr,            fallbackInt,
         fallbackStr .. " N",    fallbackInt,
         fallbackStr,            fallbackInt,
-        fallbackStr .. " kph",  fallbackInt,
-        fallbackStr .. " mph",  fallbackInt,
-        fallbackStr .. " mps",  fallbackInt,
+        fallbackStr .. " KNOTS",fallbackInt,
+        fallbackStr .. " KPH",  fallbackInt,
+        fallbackStr .. " MPH",  fallbackInt,
+        fallbackStr .. " MPS",  fallbackInt,
         fallbackStr,            fallbackInt
 
     }
@@ -111,7 +113,7 @@ if WireToolSetup then
 
     end
 
-    function ENT:Setup( out_AAP, out_AM, out_AI, out_LFN, out_DFN, out_WE, out_WFA, out_SCALAR, out_SKMH, out_SMPH, out_MPS, out_BT )
+    function ENT:Setup( out_AAP, out_AM, out_AI, out_LFN, out_DFN, out_WE, out_WFA, out_SCALAR, out_KNOTS, out_SKMH, out_SMPH, out_MPS, out_BT )
 
         -- For duplication
         self.out_AAP    = out_AAP
@@ -122,6 +124,7 @@ if WireToolSetup then
         self.out_WE     = out_WE
         self.out_WFA    = out_WFA
         self.out_SCALAR = out_SCALAR
+        self.out_KNOTS  = out_KNOTS
         self.out_SKMH   = out_SKMH
         self.out_SMPH   = out_SMPH
         self.out_MPS    = out_MPS
@@ -140,27 +143,29 @@ if WireToolSetup then
             BaseTriOut[ 17 ], BaseTriOut[ 18 ],
             BaseTriOut[ 19 ], BaseTriOut[ 20 ],
             BaseTriOut[ 21 ], BaseTriOut[ 22 ],
+            BaseTriOut[ 23 ], BaseTriOut[ 24 ],
             BaseTriOut[ 23 ], BaseTriOut[ 24 ]
 
         )
 
     end
 
-    function ENT:ShowOutput( AAP, AM, AI, LFN, DFN, WE, WE_str, WFA, SCALAR, SKMH, SMPH, MPS, BT, BT_str )
+    function ENT:ShowOutput( AAP, AM, AI, LFN, DFN, WE, WE_str, WFA, SCALAR, KNOTS, SKMH, SMPH, MPS, BT, BT_str )
 
         local txt = "OUTPUT DATA: \n"
 
-        if self.out_AAP and AAP         then txt = txt .. string.format( "\nPitch Attack Angle = %s",   AAP     .. "˚" )               end
-        if self.out_AM and AM           then txt = txt .. string.format( "\nArea (meters) = %s",        AM      .. " m²" )              end
-        if self.out_AI and AI           then txt = txt .. string.format( "\nArea (inches) = %s",        AI      .. " In²" )             end
+        if self.out_AAP and AAP         then txt = txt .. string.format( "\nAOA (PITCH) = %s",          AAP     .. "˚" )                end
+        if self.out_AM and AM           then txt = txt .. string.format( "\nArea [METERS] = %s",        AM      .. " m²" )              end
+        if self.out_AI and AI           then txt = txt .. string.format( "\nArea [INCHES] = %s",        AI      .. " In²" )             end
         if self.out_LFN and LFN         then txt = txt .. string.format( "\nLift Force = %s",           LFN     .. " N" )               end
         if self.out_DFN and DFN         then txt = txt .. string.format( "\nDrag Force = %s",           DFN     .. " N" )               end
         if self.out_WE and WE           then txt = txt .. string.format( "\nWind Enabled = %s",         WE_str  .. " ( " .. WE .. " )" )end
         if self.out_WFA and WFA         then txt = txt .. string.format( "\nWind Force Applied = %s",   WFA     .. " N" )               end
         if self.out_SCALAR and SCALAR   then txt = txt .. string.format( "\nScalar = %s",               SCALAR )                        end
-        if self.out_SKMH and SKMH       then txt = txt .. string.format( "\nSpeed (kph) = %s",          SKMH    .. " kph" )             end
-        if self.out_SMPH and SMPH       then txt = txt .. string.format( "\nSpeed (mph) = %s",          SMPH    .. " mph" )             end
-        if self.out_MPS and MPS         then txt = txt .. string.format( "\nSpeed (mps) = %s",          MPS     .. " mps" )             end
+        if self.out_KNOTS and KNOTS     then txt = txt .. string.format( "\nSpeed [KNOTS] = %s",        KNOTS   .. " KNOTS" )           end
+        if self.out_SKMH and SKMH       then txt = txt .. string.format( "\nSpeed [KPH] = %s",          SKMH    .. " KPH" )             end
+        if self.out_SMPH and SMPH       then txt = txt .. string.format( "\nSpeed [MPH] = %s",          SMPH    .. " MPH" )             end
+        if self.out_MPS and MPS         then txt = txt .. string.format( "\nSpeed [MPS] = %s",          MPS     .. " MPS" )             end
         if self.out_BT and BT           then txt = txt .. string.format( "\nBeing tracked = %s",        BT_str .. " ( " .. BT .. " )" ) end
 
         self:SetOverlayText( txt .. "\n" )
@@ -187,7 +192,7 @@ if WireToolSetup then
 
     end
 
-    function ENT:TriggerOutput( AAP_str, AAP, AM_str, AM, AI_str, AI, LFN_str, LFN, DFN_str, DFN, WE, WE_str, WFA, WFA_str, SCALAR_str, SCALAR, SKMH_str, SKMH, SMPH_str, SMPH, MPS_str, MPS, BT_str, BT )
+    function ENT:TriggerOutput( AAP_str, AAP, AM_str, AM, AI_str, AI, LFN_str, LFN, DFN_str, DFN, WE, WE_str, WFA, WFA_str, SCALAR_str, SCALAR, KNOTS_str, KNOTS, SKMH_str, SKMH, SMPH_str, SMPH, MPS_str, MPS, BT_str, BT )
 
         if self.out_AAP then
             WireLib.TriggerOutput( self, WireOutputs[ 1 ], AAP_str )
@@ -221,28 +226,32 @@ if WireToolSetup then
             WireLib.TriggerOutput( self, WireOutputs[ 15 ], SCALAR_str )
             WireLib.TriggerOutput( self, WireOutputs[ 16 ], SCALAR )
         end
+        if self.out_KNOTS then
+            WireLib.TriggerOutput( self, WireOutputs[ 17 ], KNOTS_str )
+            WireLib.TriggerOutput( self, WireOutputs[ 18 ], KNOTS )
+        end
         if self.out_SKMH then
-            WireLib.TriggerOutput( self, WireOutputs[ 17 ], SKMH_str )
-            WireLib.TriggerOutput( self, WireOutputs[ 18 ], SKMH )
+            WireLib.TriggerOutput( self, WireOutputs[ 19 ], SKMH_str )
+            WireLib.TriggerOutput( self, WireOutputs[ 20 ], SKMH )
         end
         if self.out_SMPH then
-            WireLib.TriggerOutput( self, WireOutputs[ 19 ], SMPH_str )
-            WireLib.TriggerOutput( self, WireOutputs[ 20 ], SMPH )
+            WireLib.TriggerOutput( self, WireOutputs[ 21 ], SMPH_str )
+            WireLib.TriggerOutput( self, WireOutputs[ 22 ], SMPH )
         end
         if self.out_MPS then
-            WireLib.TriggerOutput( self, WireOutputs[ 21 ], MPS_str )
-            WireLib.TriggerOutput( self, WireOutputs[ 22 ], MPS )
+            WireLib.TriggerOutput( self, WireOutputs[ 23 ], MPS_str )
+            WireLib.TriggerOutput( self, WireOutputs[ 24 ], MPS )
         end
         if self.out_BT then
-            WireLib.TriggerOutput( self, WireOutputs[ 23 ], BT_str )
-            WireLib.TriggerOutput( self, WireOutputs[ 24 ], BT )
+            WireLib.TriggerOutput( self, WireOutputs[ 25 ], BT_str )
+            WireLib.TriggerOutput( self, WireOutputs[ 26 ], BT )
         end
 
-        self:ShowOutput( AAP, AM, AI, LFN, DFN, WE, WE_str, WFA, SCALAR, SKMH, SMPH, MPS, BT, BT_str )
+        self:ShowOutput( AAP, AM, AI, LFN, DFN, WE, WE_str, WFA, SCALAR, KNOTS, SKMH, SMPH, MPS, BT, BT_str )
 
     end
 
-    duplicator.RegisterEntityClass( "gmod_wire_finos_fin", WireLib.MakeWireEnt, "Data", "out_AAP", "out_AM", "out_AI", "out_LFN", "out_DFN", "out_WE", "out_WFA", "out_SCALAR", "out_SKMH", "out_SMPH", "out_MPS", "out_BT" )
+    duplicator.RegisterEntityClass( "gmod_wire_finos_fin", WireLib.MakeWireEnt, "Data", "out_AAP", "out_AM", "out_AI", "out_LFN", "out_DFN", "out_WE", "out_WFA", "out_SCALAR", "out_KNOTS", "out_SKMH", "out_SMPH", "out_MPS", "out_BT" )
 
     function ENT:FINOS_UpdateInputValueWireModGlobally( InputData, FINOSDATA_InputWireModTable, TableID, NWBoolString )
 
@@ -268,10 +277,11 @@ if WireToolSetup then
         local WE        = BaseTriOut[ 12 ]
         local WFA       = BaseTriOut[ 14 ]
         local SCALAR    = BaseTriOut[ 16 ]
-        local SKMH      = BaseTriOut[ 18 ]
-        local SMPH      = BaseTriOut[ 20 ]
-        local MPS       = BaseTriOut[ 22 ]
-        local BT        = BaseTriOut[ 24 ]
+        local KNOTS     = BaseTriOut[ 18 ]
+        local SKMH      = BaseTriOut[ 20 ]
+        local SMPH      = BaseTriOut[ 22 ]
+        local MPS       = BaseTriOut[ 24 ]
+        local BT        = BaseTriOut[ 26 ]
 
         local AAP_str       = BaseTriOut[ 1 ]
         local AM_str        = BaseTriOut[ 3 ]
@@ -281,10 +291,11 @@ if WireToolSetup then
         local WE_str        = BaseTriOut[ 11 ]
         local WFA_str       = BaseTriOut[ 13 ]
         local SCALAR_str    = BaseTriOut[ 15 ]
-        local SKMH_str      = BaseTriOut[ 17 ]
-        local SMPH_str      = BaseTriOut[ 19 ]
-        local MPS_str       = BaseTriOut[ 21 ]
-        local BT_str        = BaseTriOut[ 23 ]
+        local KNOTS_str     = BaseTriOut[ 17 ]
+        local SKMH_str      = BaseTriOut[ 19 ]
+        local SMPH_str      = BaseTriOut[ 21 ]
+        local MPS_str       = BaseTriOut[ 23 ]
+        local BT_str        = BaseTriOut[ 25 ]
 
         local FinEnt = self.FinEntity
 
@@ -304,6 +315,7 @@ if WireToolSetup then
                 WIREFINFLAPOUTPUTDATA[ "FIN_WindEnabled" ] and
                 WIREFINFLAPOUTPUTDATA[ "FIN_WindAppliedForceNewtons" ] and
                 WIREFINFLAPOUTPUTDATA[ "FIN_Scalar" ] and
+                WIREFINFLAPOUTPUTDATA[ "FIN_VelocityKnots" ] and
                 WIREFINFLAPOUTPUTDATA[ "FIN_VelocityKmH" ] and
                 WIREFINFLAPOUTPUTDATA[ "FIN_VelocityMpH" ] and
                 WIREFINFLAPOUTPUTDATA[ "FIN_VelocityMps" ] and
@@ -321,12 +333,13 @@ if WireToolSetup then
                 WE      = round( WIREFINFLAPOUTPUTDATA[ "FIN_WindEnabled" ] )
                 WFA     = round( WIREFINFLAPOUTPUTDATA[ "FIN_WindAppliedForceNewtons" ] )
                 SCALAR  = WIREFINFLAPOUTPUTDATA[ "FIN_Scalar" ]
-                SKMH    = round( WIREFINFLAPOUTPUTDATA[ "FIN_VelocityKmH" ] )
-                SMPH    = round( WIREFINFLAPOUTPUTDATA[ "FIN_VelocityMpH" ] )
-                MPS     = round( WIREFINFLAPOUTPUTDATA[ "FIN_VelocityMps" ] )
+                KNOTS   = round( WIREFINFLAPOUTPUTDATA[ "FIN_VelocityKnots" ], 1 )
+                SKMH    = round( WIREFINFLAPOUTPUTDATA[ "FIN_VelocityKmH" ], 1 )
+                SMPH    = round( WIREFINFLAPOUTPUTDATA[ "FIN_VelocityMpH" ], 1 )
+                MPS     = round( WIREFINFLAPOUTPUTDATA[ "FIN_VelocityMps" ], 1 )
                 BT      = WIREFINFLAPOUTPUTDATA[ "FIN_FinBeingTracked" ]
 
-                AAP_str     = AAP .. "˚"
+                AAP_str     = "AOA: " .. AAP .. "˚"
                 AM_str      = AM .. " m²"
                 AI_str      = AI .. " In²"
                 LFN_str     = LFN .. " N"
@@ -334,9 +347,10 @@ if WireToolSetup then
                 if WE < 1 then WE_str = "No" else WE_str = "Yes" end
                 WFA_str     = WFA .. " N"
                 SCALAR_str  = tostring( SCALAR )
-                SKMH_str    = SKMH .. " kph"
-                SMPH_str    = SMPH .. " mph"
-                MPS_str     = MPS .. " mps"
+                KNOTS_str   = KNOTS .. " KNOTS"
+                SKMH_str    = SKMH .. " KPH"
+                SMPH_str    = SMPH .. " MPH"
+                MPS_str     = MPS .. " MPS"
                 if BT < 1 then BT_str = "No" else BT_str = "Yes" end
 
             end
@@ -349,16 +363,20 @@ if WireToolSetup then
             -- Tell Fin OS Brain to ignore the original scalar angle from fin prop
             -- Tell Fin OS Brain to ignore the original Wind Force Being Applied from fin prop
             -- Tell Fin OS Brain to ignore the real pitch angle from fin prop
-            local FINOSDATA_InputWireModTable = FinEnt[ "FinOS_data" ][ "fin_os__Wiremod_InputValues" ]
+            if FinEnt[ "FinOS_data" ] and FinEnt[ "FinOS_data" ][ "fin_os__Wiremod_InputValues" ] then
 
-            --[[ ATTACK ANGLE ]]self:FINOS_UpdateInputValueWireModGlobally( AttackPitchAngleInput, FINOSDATA_InputWireModTable, "AttackAngle_Pitch_Wiremod", "IgnoreRealPitchAttackAngle" )
-            --[[ WIND ]]        self:FINOS_UpdateInputValueWireModGlobally( WindForceBeingApplied, FINOSDATA_InputWireModTable, "WindAmountNewtonsForArea_Wiremod", "IgnoreRealWindForceApplied" )
-            --[[ LIFT ]]        self:FINOS_UpdateInputValueWireModGlobally( LiftScalarInput, FINOSDATA_InputWireModTable, "FinOS_LiftForceScalarValue_Wiremod", "IgnoreRealScalarValue" )
+                local FINOSDATA_InputWireModTable = FinEnt[ "FinOS_data" ][ "fin_os__Wiremod_InputValues" ]
+
+                --[[ ATTACK ANGLE ]]self:FINOS_UpdateInputValueWireModGlobally( AttackPitchAngleInput, FINOSDATA_InputWireModTable, "AttackAngle_Pitch_Wiremod", "IgnoreRealPitchAttackAngle" )
+                --[[ WIND ]]        self:FINOS_UpdateInputValueWireModGlobally( WindForceBeingApplied, FINOSDATA_InputWireModTable, "WindAmountNewtonsForArea_Wiremod", "IgnoreRealWindForceApplied" )
+                --[[ LIFT ]]        self:FINOS_UpdateInputValueWireModGlobally( LiftScalarInput, FINOSDATA_InputWireModTable, "FinOS_LiftForceScalarValue_Wiremod", "IgnoreRealScalarValue" )
+
+            end
 
         end
 
         -- Update globally
-        self:TriggerOutput( AAP_str, AAP, AM_str, AM, AI_str, AI, LFN_str, LFN, DFN_str, DFN, WE, WE_str, WFA, WFA_str, SCALAR_str, SCALAR, SKMH_str, SKMH, SMPH_str, SMPH, MPS_str, MPS, BT_str, BT )
+        self:TriggerOutput( AAP_str, AAP, AM_str, AM, AI_str, AI, LFN_str, LFN, DFN_str, DFN, WE, WE_str, WFA, WFA_str, SCALAR_str, SCALAR, KNOTS_str, KNOTS, SKMH_str, SKMH, SMPH_str, SMPH, MPS_str, MPS, BT_str, BT )
 
         self:NextThink( CurTime() + 0.03 ) return true
 

@@ -172,10 +172,11 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 		local timeDeltaTime = ( tonumber( self:GetVelocityTimeB() ) - tonumber( self:GetVelocityTimeA() ) )
 
 		-- 1 foot = 12 units = 0.3048 meter
-		local CURRENT_VELOCITY_UnitsSecond = ( ( vectorDeltaDistanceABLength_Units / timeDeltaTime ) / 3 ) -- The actual velocity in Units/s ( fraction by 3, to get it more realistic ( based on normal walking speed of humans 5 km/h ) )
-		local CURRENT_VELOCITY_MeterSecond = ( ( CURRENT_VELOCITY_UnitsSecond / 12 * 0.3048 ) ) -- The actual velocity in m/s
-		local CURRENT_VELOCITY_KmHour = ( CURRENT_VELOCITY_MeterSecond * 3.6 ) -- The actual velocity in km/h
+		local CURRENT_VELOCITY_UnitsSecond 	= ( ( vectorDeltaDistanceABLength_Units / timeDeltaTime ) / 3 ) -- The actual velocity in Units/s ( fraction by 3, to get it more realistic ( based on normal walking speed of humans 5 km/h ) )
+		local CURRENT_VELOCITY_MeterSecond 	= ( ( CURRENT_VELOCITY_UnitsSecond / 12 * 0.3048 ) ) -- The actual velocity in m/s
+		local CURRENT_VELOCITY_KmHour 		= ( CURRENT_VELOCITY_MeterSecond * 3.6 ) -- The actual velocity in km/h
 		local CURRENT_VELOCITY_MilesPerHour = ( CURRENT_VELOCITY_MeterSecond * 2.24 ) -- The actual velocity in mph
+		local CURRENT_VELOCITY_Knots 		= ( CURRENT_VELOCITY_KmHour * 1.852 ) -- The actual velocity in knots [1 knot = 1.85200 km/h]
 
 		local entPhysicsObject = entFinParentProp:GetPhysicsObject()
 
@@ -415,6 +416,7 @@ function ENT:ApplyForceLiftToFinWing( entFinParentProp )
 
 				FIN_FinBeingTracked			= entBeingTracked,
 				FIN_AttackAngle_Pitch		= FINATTACKANGLE,
+				FIN_VelocityKnots			= CURRENT_VELOCITY_Knots,
 				FIN_VelocityKmH				= CURRENT_VELOCITY_KmHour,
 				FIN_VelocityMpH				= CURRENT_VELOCITY_MeterSecond,
 				FIN_VelocityMps				= CURRENT_VELOCITY_MilesPerHour,
